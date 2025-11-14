@@ -7,7 +7,7 @@ namespace wolf {
         this->out_dim = out_dim;
 
         auto& gen = rng().gen;
-        auto normal_gen = [&]() {return std::normal_distribution{0.0, std::sqrt(2.0 / out_dim)}(gen);};
+        auto normal_gen = [&]() {return std::normal_distribution{0.0, std::sqrt(2.0 / in_dim)}(gen);};
         std::vector<float> temp(out_dim * in_dim);
         std::vector<float> temp_b(out_dim);
         std::ranges::generate(temp, normal_gen);

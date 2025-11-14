@@ -10,4 +10,14 @@ namespace wolf{
         }
         return Tensor(out, a.nrows(), a.ncols());
     }
+
+    float mse_loss(const Tensor& a, const Tensor& b) {
+        const auto& a_raw = a.raw();
+        const auto& b_raw = b.raw();
+        float out = 0.0f;
+        for (size_t i = 0; i < a_raw.size(); i++) {
+            out += 0.5 * (a_raw[i] - b_raw[i]) * (a_raw[i] - b_raw[i]);
+        }
+        return out;
+    }
 }

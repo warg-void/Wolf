@@ -19,7 +19,8 @@ int main() {
     auto gen = std::mt19937(std::random_device{}());
     std::uniform_int_distribution<> dist(0, 19);
     for (int j = 0; j < steps; j++) {
-        int i = dist(gen);
+        // for 1000 times, pick a random (x, y) and feed that into the model
+        int i = dist(gen); 
         Tensor y = model.pred(Tensor({xs[i]}, 1, 1));
         Tensor t = Tensor({ys[i]}, 1, 1);
         Tensor gl = grad_loss(y, t); // gradient of the loss
