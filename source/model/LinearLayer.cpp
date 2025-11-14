@@ -1,11 +1,20 @@
 #include <model/LinearLayer.h>
+#include <math/rng.h>
+#include <algorithm>
 namespace wolf {
     LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) {
         this->in_dim = in_dim;
         this->out_dim = out_dim;
-        W = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
+
+        auto& gen = rng().gen;
+        auto normal_gen = [&]() {return std::normal_distribution{0.0, std::sqrt(2.0 / out_dim)}(gen);};
+        std::vector<float> temp(out_dim * in_dim);
+        std::vector<float> temp_b(out_dim);
+        std::ranges::generate(temp, normal_gen);
+        std::ranges::generate(temp_b, normal_gen);
+        W = Tensor(temp, out_dim, in_dim);
         dW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
-        b = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
+        b = Tensor(temp_b, 1, out_dim);
         db = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
     }
     Tensor LinearLayer::forward(const Tensor& x) {
@@ -43,5 +52,21 @@ namespace wolf {
         }
         return Tensor(gx, 1, in_dim);
 
+    }
+
+    void LinearLayer::step(float lr) {
+        // SGD
+        auto& W_raw = W.raw();
+        auto& dW_raw = dW.raw();
+        auto& b_raw = b.raw();
+        auto& db_raw = db.raw();
+        // std::println("dW = {}", dW_raw[0]);
+        for (size_t i = 0; i < W_raw.size(); i++) {
+            W_raw[i] -= lr * dW_raw[i];
+        }
+        for (size_t i = 0; i < b_raw.size(); i++) {
+            b_raw[i] -= lr * db_raw[i];
+        }
+        // std::println("W = {}, b = {}", W(0), b(0));
     }
 }

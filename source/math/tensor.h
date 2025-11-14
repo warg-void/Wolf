@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <iostream>
+#include <print>
 namespace wolf {
 
 class Tensor {
@@ -31,9 +31,8 @@ public:
     };
     void print() const {
         for (auto &i : data) {
-            std::cout << i << ' ';
+            std::println("{}", i);
         }
-        std::cout << std::endl;
     }
 };
 }
