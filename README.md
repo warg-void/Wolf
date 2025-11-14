@@ -11,7 +11,7 @@ Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs witho
 
 ## Implemented Already
 
-- Fully connected feed-forward neural networks (MLPs)
+- Fully connected feed-forward neural networks
 - Backpropagation + Stochastic Gradient Descent
 - Linear and ReLU Layers
 
