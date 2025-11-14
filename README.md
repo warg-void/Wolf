@@ -1,6 +1,6 @@
 # Wolf — C++ Neural Net Library
 
-Wolf is a C++23 neural network implementation with a clean CMake setup and runnable examples.  
+Wolf is a no-dependency C++23 neural network implementation with a clean CMake setup and runnable examples.  
 Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs without any external ML frameworks.
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
@@ -40,6 +40,7 @@ cmake --build build
 - [ ] Adam and AdamW optimizers
 - [ ] Helper functions to save and load neural nets
 - [ ] Helper functions to download and parse datasets
+- [ ] Write Docs
 - [ ] ROCm and rocBLAS 
 - [ ] cuDA and cuBLAS
 - [ ] CNNs
