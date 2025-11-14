@@ -36,7 +36,7 @@ int main() {
         Tensor t({s.y}, 1, 1);         
 
         Tensor y = model.pred(x);       // forward
-        Tensor dE_dy = grad_loss(y, t);      // gradient w.r.t. y
+        Tensor dE_dy = grad_loss(y, t);    // gradient w.r.t. y
 
         model.backward(dE_dy);          // backprop through layers
         model.step(lr);                 // SGD update
