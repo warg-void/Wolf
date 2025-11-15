@@ -2,6 +2,7 @@
 
 namespace wolf{
     Tensor grad_loss(const Tensor& a, const Tensor& b) { // Gradient of loss w.r.t output
+        // Input tensor size: batch_size x feature_dim
         const auto& a_raw = a.raw();
         const auto& b_raw = b.raw();
         std::vector<float> out(a_raw.size());
@@ -11,7 +12,7 @@ namespace wolf{
         return Tensor(out, a.nrows(), a.ncols());
     }
 
-    float mse_loss(const Tensor& a, const Tensor& b) {
+    float total_mse_loss(const Tensor& a, const Tensor& b) {
         const auto& a_raw = a.raw();
         const auto& b_raw = b.raw();
         float out = 0.0f;

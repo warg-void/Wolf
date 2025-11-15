@@ -9,11 +9,13 @@ public:
     LinearLayer(size_t in_dim, size_t out_dim);
 
     Tensor forward(const Tensor& x) override;
-    Tensor backward(const Tensor& grad_out) override;
+    Tensor backward(const Tensor& grad_out, int batch_size) override;
     void step(float lr);
 private:
     size_t in_dim;
     size_t out_dim;
+
+    std::vector<size_t> idx; // [out_dim x in_dim] for indexing
 
     Tensor W;   // [out_dim x in_dim]
     Tensor dW;

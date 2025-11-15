@@ -8,7 +8,7 @@ namespace wolf {
 class ReLULayer : public Layer {
 public:
     Tensor forward(const Tensor& x) override;
-    Tensor backward(const Tensor& grad_out) override;
+    Tensor backward(const Tensor& grad_out, int batch_size) override;
     void step(float lr) {}
     ReLULayer() {}
 

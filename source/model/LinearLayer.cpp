@@ -1,6 +1,8 @@
 #include <model/LinearLayer.h>
 #include <math/rng.h>
 #include <algorithm>
+#include <execution>
+#include <utils/timer.h>
 namespace wolf {
     LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) {
         this->in_dim = in_dim;
@@ -16,40 +18,66 @@ namespace wolf {
         dW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
         b = Tensor(temp_b, 1, out_dim);
         db = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
+        idx.resize(in_dim * out_dim);
+        std::iota(idx.begin(), idx.end(), size_t{0});
     }
     Tensor LinearLayer::forward(const Tensor& x) {
         last_input = x;
-        std::vector<float> out(out_dim);
-        for (size_t j = 0; j < out_dim; j++) {
-            float sum = b(j);
-            for (size_t i = 0; i < in_dim; i++) {
-                sum += x(i) * W(j, i);
+        int xr = x.nrows(); // Number of batches
+        std::vector<float> out(xr * out_dim);
+        std::for_each(std::execution::par_unseq, idx.begin(), idx.begin() + out.size(),
+            [&](size_t j){
+                size_t k = j % out_dim; // Output Node index
+                float sum = b(k);
+                for (size_t i = 0; i < in_dim; i++) {
+                    sum += x(i) * W(k, i);
+                }
+                out[j] = sum;
             }
-            out[j] = sum;
-        }
-        return Tensor(out, 1, out_dim);
+        ); 
+        return Tensor(out, xr, out_dim);
     }
 
-    Tensor LinearLayer::backward(const Tensor& grad_out) {
+    Tensor LinearLayer::backward(const Tensor& grad_out, int batch_size) {
         const auto& x = last_input.raw();
         const auto& gy = grad_out.raw();
         auto& dW_raw = dW.raw();
         auto& db_raw = db.raw();
         const auto& W_raw = W.raw();
         std::vector<float> gx(in_dim, 0.0f);
-        for (size_t i = 0; i < out_dim; i++) {
-            db_raw[i] = gy[i];
-            for (size_t j = 0; j < in_dim; j++) {
-                dW_raw[i * in_dim + j] = gy[i] * x[j]; 
-            }
-        }
-        for (size_t i = 0; i < in_dim; i++) {
-            float sum = 0.0f;
-            for (size_t j = 0; j < out_dim; j++) {
-                sum += W_raw[i + in_dim * j] * gy[j]; 
-            }
-            gx[i] = sum;
-        }
+        // Unparallelized version of the below code:
+        // for (size_t i = 0; i < out_dim; i++) {
+        //     db_raw[i] = gy[i] / (float)batch_size;
+        //     for (size_t j = 0; j < in_dim; j++) {
+        //         dW_raw[i * in_dim + j] = gy[i] * x[j] / (float)batch_size;
+        //         gx[j] += W_raw[i * in_dim + j] * gy[i]; 
+        //     }
+        // }
+        const float inv_bs = 1.0f / static_cast<float>(batch_size);
+        std::for_each(std::execution::par_unseq,
+                    idx.begin(), idx.begin() + out_dim,
+                    [&](size_t i) {
+                        const float scale = gy[i] * inv_bs;  
+
+                        db_raw[i] = scale; // = gy[i] / batch_size
+
+                        const size_t row = i * in_dim;
+                        for (size_t j = 0; j < in_dim; ++j) {
+                            dW_raw[row + j] = scale * x[j];
+                        }
+                    });
+        
+        std::for_each(std::execution::par_unseq,
+                    idx.begin(), idx.begin() + in_dim,
+                    [&](size_t j) {
+                        float sum = 0.0f;
+                        for (size_t i = 0; i < out_dim; ++i) {
+                            sum += W_raw[i * in_dim + j] * gy[i];
+                        }
+                        gx[j] += sum;
+                    });
+
+
         return Tensor(gx, 1, in_dim);
 
     }
@@ -60,13 +88,15 @@ namespace wolf {
         auto& dW_raw = dW.raw();
         auto& b_raw = b.raw();
         auto& db_raw = db.raw();
-        // std::println("dW = {}", dW_raw[0]);
-        for (size_t i = 0; i < W_raw.size(); i++) {
-            W_raw[i] -= lr * dW_raw[i];
-        }
-        for (size_t i = 0; i < b_raw.size(); i++) {
-            b_raw[i] -= lr * db_raw[i];
-        }
-        // std::println("W = {}, b = {}", W(0), b(0));
+        std::for_each(std::execution::par_unseq, idx.begin(), idx.end(),
+            [&](size_t i) {
+                W_raw[i] -= lr * dW_raw[i];
+            }
+        );
+        std::for_each(std::execution::par_unseq, idx.begin(), idx.begin() + b_raw.size(),
+            [&](size_t i) {
+                b_raw[i] -= lr * db_raw[i];
+            }
+        );
     }
 }

@@ -120,24 +120,29 @@ int main(int argc, char** argv) {
         float epoch_loss = 0.0f;
 
         for (std::size_t k = 0; k < indices.size(); ++k) {
+
             const auto& s = train_data[indices[k]];
 
             Tensor x = make_input(s);
             Tensor t = make_target(s);
+            
 
             Tensor y = model.pred(x);
-            float loss = mse_loss(y, t);
+
+            float loss = total_mse_loss(y, t);
             Tensor dE_dy = grad_loss(y, t);
+            
 
             model.backward(dE_dy);
             model.step(lr);
 
             epoch_loss += loss;
-
             if ((k + 1) % 10000 == 0) {
-                std::println("Epoch {} step {}/{} - running avg loss = {}",
+                std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
+                std::println("Epoch {} step {}/{} - running avg loss = {} t = {}",
                              epoch, k + 1, indices.size(),
-                             epoch_loss / static_cast<float>(k + 1));
+                             epoch_loss / static_cast<float>(k + 1),
+                             std::chrono::duration_cast<std::chrono::seconds> (cur_time - begin).count());
             }
         }
 

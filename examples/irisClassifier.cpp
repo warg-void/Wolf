@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
         Tensor x = make_input(s);
         Tensor t = make_target(s);
         Tensor y = model.pred(x); 
-        float loss = mse_loss(y, t);
+        float loss = total_mse_loss(y, t);
         Tensor dE_dy = grad_loss(y, t);
 
         model.backward(dE_dy);

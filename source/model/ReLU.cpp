@@ -10,11 +10,11 @@ namespace wolf {
         } else {
             out[i] = x(i);
         }
-      } 
+      }
       return Tensor(out, x.nrows(), x.ncols());
     }
 
-    Tensor ReLULayer::backward(const Tensor& grad_out) {
+    Tensor ReLULayer::backward(const Tensor& grad_out, int batch_size) {
         const auto &x = last_input.raw();
         const auto &gy = grad_out.raw();
 
@@ -22,7 +22,6 @@ namespace wolf {
         for (size_t i = 0; i < x.size(); i++) {
             gx[i] = (x[i] > 0.0f) ? gy[i] : 0.0f;
         }
-
         return Tensor(gx, last_input.nrows(), last_input.ncols());
     }
 }
