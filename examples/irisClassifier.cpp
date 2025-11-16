@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    // 4. Evaluate accuracy on the whole dataset
+    // Evaluate accuracy on the whole dataset
     int correct = 0;
     for (const auto& s : data) {
         Tensor x = make_input(s);

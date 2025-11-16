@@ -24,8 +24,9 @@ int main() {
         Tensor y = model.pred(Tensor({xs[i]}, 1, 1));
         Tensor t = Tensor({ys[i]}, 1, 1);
         Tensor gl = grad_loss(y, t); // gradient of the loss
+        float l = total_mse_loss(y, t); // half total sum squared loss function
         model.backward(gl);
         model.step(lr);
-        std::println("x = {} y = {}, t = {}, gl = {} ", xs[i], y(0), t(0), gl(0));
+        std::println("x = {} pred = {:.3f}, target = {}, loss = {} ", xs[i], y(0), t(0), l);
     }
 }
