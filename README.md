@@ -11,12 +11,12 @@ Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs on CP
 
 ---
 
-## Implemented Already
+## Features 
 
 - Fully connected feed-forward neural networks
 - Backpropagation + Stochastic Gradient Descent
 - Linear and ReLU Layers
-
+- Fully optimized for CPU
 ---
 
 ### 1. Clone and build
@@ -46,4 +46,3 @@ cmake --build build
 - [ ] ROCm and rocBLAS 
 - [ ] cuDA and cuBLAS
 - [ ] CNNs
-- [x] CPU matrix optimizations

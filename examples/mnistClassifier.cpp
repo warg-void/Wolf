@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 
         float avg_loss = epoch_loss / static_cast<float>(indices.size());
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::println("Epoch {} finished. Avg loss = {} t = {}", epoch, avg_loss, std::chrono::duration_cast<std::chrono::seconds> (end - begin).count());
+        std::println("Epoch {} finished. Avg loss = {} runtime epoch = {}ms", epoch, avg_loss, std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count());
     }
 
     // Evaluation on test set
