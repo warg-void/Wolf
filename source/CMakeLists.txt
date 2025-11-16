@@ -1,4 +1,7 @@
 project (source)
+
+set(CMAKE_CXX_FLAGS "-O3")
+
 add_library(${PROJECT_NAME} wolf.h math/tensor.cpp math/tensor.h 
 model/Layer.h model/LinearLayer.h model/LinearLayer.cpp model/Sequential.h model/Sequential.cpp 
 model/ReLU.h model/ReLU.cpp model/LayerFactory.h math/loss.h)
