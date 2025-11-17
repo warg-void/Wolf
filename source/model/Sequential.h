@@ -15,7 +15,7 @@ public:
 
     Tensor pred(const Tensor &x);
     Tensor backward(const Tensor& grad_out);
-    void step(float lr);
+    void step(float lr, size_t batch_size = 1);
 
 private:
     std::vector<std::unique_ptr<Layer>> layers;

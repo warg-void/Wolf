@@ -65,15 +65,21 @@ std::vector<MnistSample> load_mnist_csv(const std::string& path, int max_samples
 }
 
 // Convert sample to input Tensor [1 x 784]
-Tensor make_input(const MnistSample& s) {
-    return Tensor(s.x, 1, 784);
+Tensor make_input(const std::vector<MnistSample>& tr, size_t k, int batch_size) {
+    std::vector<float> out;
+    for (size_t i = 0; i < batch_size; i++) {
+        out.insert(out.end(), tr[k + i].x.cbegin(), tr[k + i].x.cend());
+    }
+    return Tensor(out, batch_size, 784);
 }
 
 // One-hot target [1 x 10]
-Tensor make_target(const MnistSample& s) {
-    std::vector<float> t(10, 0.0f);
-    t[s.label] = 1.0f;
-    return Tensor(t, 1, 10);
+Tensor make_target(const std::vector<MnistSample>& tr, size_t k, int batch_size) {
+    std::vector<float> t(10 * batch_size, 0.0f);
+    for (size_t i = 0; i < batch_size; i++) {
+        t[10 * i + tr[k + i].label] = 1.0f;
+    }
+    return Tensor(t, batch_size, 10);
 }
 
 
@@ -104,57 +110,48 @@ int main(int argc, char** argv) {
         Linear(128, 10)
     );
 
-    float lr     = 0.01f;
-    int   epochs = 3;          // Number of times the model is trained over whole train set (repeat)
+    float lr = 0.05f;
+    int epochs = 5;          // Number of times the model is trained over whole train set (repeat)
+    int batch_size = 5;
 
     std::mt19937 gen(std::random_device{}());
 
     // Training
-    std::vector<std::size_t> indices(train_data.size());
-    std::iota(indices.begin(), indices.end(), 0);
 
     for (int epoch = 0; epoch < epochs; ++epoch) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        std::shuffle(indices.begin(), indices.end(), gen);
 
         float epoch_loss = 0.0f;
 
-        for (std::size_t k = 0; k < indices.size(); ++k) {
-
-            const auto& s = train_data[indices[k]];
-
-            Tensor x = make_input(s);
-            Tensor t = make_target(s);
-            
-
+        for (size_t k = 0; k < train_data.size(); k += batch_size) {
+            Tensor x = make_input(train_data, k, batch_size);
+            Tensor t = make_target(train_data, k, batch_size);
             Tensor y = model.pred(x);
 
             float loss = total_mse_loss(y, t);
             Tensor dE_dy = grad_loss(y, t);
-            
-
             model.backward(dE_dy);
-            model.step(lr);
+            model.step(lr, batch_size);
 
             epoch_loss += loss;
-            if ((k + 1) % 10000 == 0) {
+            if ((k / batch_size + 1) % 10000 == 0) {
                 std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
                 std::println("Epoch {} step {}/{} - running avg loss = {} t = {}",
-                             epoch, k + 1, indices.size(),
+                             epoch, k + 1, train_data.size(),
                              epoch_loss / static_cast<float>(k + 1),
                              std::chrono::duration_cast<std::chrono::seconds> (cur_time - begin).count());
             }
         }
 
-        float avg_loss = epoch_loss / static_cast<float>(indices.size());
+        float avg_loss = epoch_loss / static_cast<float>(train_data.size());
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::println("Epoch {} finished. Avg loss = {} runtime epoch = {}ms", epoch, avg_loss, std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count());
     }
 
     // Evaluation on test set
     int correct = 0;
-    for (const auto& s : test_data) {
-        Tensor x = make_input(s);
+    for (size_t j = 0; j < test_data.size(); j++) {
+        Tensor x = make_input(test_data, j, 1);
         Tensor y = model.pred(x);
 
         const auto& yr = y.raw();
@@ -163,7 +160,7 @@ int main(int argc, char** argv) {
             if (yr[i] > yr[pred]) pred = i;
         }
 
-        if (pred == s.label) ++correct;
+        if (pred == test_data[j].label) ++correct;
     }
 
     float acc = 100.0f * static_cast<float>(correct) / static_cast<float>(test_data.size());

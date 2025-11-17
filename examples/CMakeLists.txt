@@ -14,7 +14,7 @@ target_link_libraries(singleNeuron wolf::wolf)
 target_link_libraries(xortest wolf::wolf)
 target_link_libraries(irisClassifer wolf::wolf)
 
-option(BUILD_MNIST        "Build MNIST example" OFF)
+option(BUILD_MNIST "Build MNIST example" ON)
 if (BUILD_MNIST)
     add_executable(mnistClassifier mnistClassifier.cpp)
     target_link_libraries(mnistClassifier wolf::wolf)

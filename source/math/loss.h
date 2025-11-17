@@ -19,6 +19,6 @@ namespace wolf{
         for (size_t i = 0; i < a_raw.size(); i++) {
             out += 0.5 * (a_raw[i] - b_raw[i]) * (a_raw[i] - b_raw[i]);
         }
-        return out;
+        return out / a.nrows();
     }
 }

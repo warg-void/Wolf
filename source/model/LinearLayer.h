@@ -9,8 +9,8 @@ public:
     LinearLayer(size_t in_dim, size_t out_dim);
 
     Tensor forward(const Tensor& x) override;
-    Tensor backward(const Tensor& grad_out, int batch_size) override;
-    void step(float lr);
+    Tensor backward(const Tensor& grad_out) override;
+    void step(float lr, size_t batch_size);
 private:
     size_t in_dim;
     size_t out_dim;

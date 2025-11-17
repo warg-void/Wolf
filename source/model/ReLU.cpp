@@ -14,7 +14,7 @@ namespace wolf {
       return Tensor(out, x.nrows(), x.ncols());
     }
 
-    Tensor ReLULayer::backward(const Tensor& grad_out, int batch_size) {
+    Tensor ReLULayer::backward(const Tensor& grad_out) {
         const auto &x = last_input.raw();
         const auto &gy = grad_out.raw();
 
