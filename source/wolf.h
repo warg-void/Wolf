@@ -8,6 +8,6 @@
 #include <model/Sequential.h>
 #include <model/LayerFactory.h>
 #include <math/loss.h>
-#include <utils/make_batch.h>
+#include <utils/data.h>
 
 #endif

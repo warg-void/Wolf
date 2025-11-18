@@ -12,76 +12,58 @@
 
 using namespace wolf;
 
-struct MnistSample {
-    std::vector<float> x;  // 784 floats in [0,1]
-    int label;             // 0..9
-};
+const int num_pixels = 784;
+const int num_classes = 10;
 
-std::vector<MnistSample> load_mnist_csv(const std::string& path, int max_samples = -1) {
+std::size_t load_mnist_csv(
+    const std::string& path,
+    std::vector<float>& x_data,   // will contain N * 784 floats
+    std::vector<float>& t_data   // will contain N labels as floats
+) {
     std::ifstream in(path);
     if (!in) {
         throw std::runtime_error("Failed to open " + path);
     }
-
-    std::vector<MnistSample> data;
     std::string line;
 
     // Skip header
     if (!std::getline(in, line)) {
-        throw std::runtime_error("Empty MNIST file: " + path);
+        throw std::runtime_error("Empty MNIST file");
     }
+
+
+    std::size_t num_samples = 0;
 
     while (std::getline(in, line)) {
         if (line.empty()) continue;
+
         std::stringstream ss(line);
         std::string field;
-
-        MnistSample s;
-        s.x.resize(784);
-
-        // label
         if (!std::getline(ss, field, ',')) {
-            continue; // malformed line
+            continue;
         }
-        s.label = std::stoi(field);
 
-        // 784 pixels
-        for (int i = 0; i < 784; ++i) {
+        int label = std::stoi(field);
+        for (int i = 0; i < num_classes; i++) {
+            t_data.push_back(i == label ? 1 : 0);
+        }
+
+        for (int i = 0; i < num_pixels; ++i) {
             if (!std::getline(ss, field, ',')) {
-                throw std::runtime_error("Malformed MNIST row (not enough pixels) in " + path);
+                throw std::runtime_error(
+                    "Malformed MNIST row (not enough pixels) in " + path
+                );
             }
             int pix = std::stoi(field);
-            s.x[i] = static_cast<float>(pix) / 255.0f;  // normalize to [0,1]
+            float norm_pix = static_cast<float>(pix) / 255.0f; // [0, 1]
+            x_data.push_back(norm_pix);
         }
 
-        data.push_back(std::move(s));
-
-        if (max_samples > 0 && static_cast<int>(data.size()) >= max_samples) {
-            break;
-        }
+        ++num_samples;
     }
 
-    return data;
+    return num_samples;
 }
-
-// Convert sample to input Tensor [1 x 784]
-Tensor make_input(const std::vector<MnistSample>& tr, size_t k, int batch_size) {
-    std::vector<float> out;
-    for (size_t i = 0; i < batch_size; i++) {
-        out.insert(out.end(), tr[k + i].x.cbegin(), tr[k + i].x.cend());
-    }
-    return Tensor(out, batch_size, 784);
-}
-
-// One-hot target [1 x 10]
-Tensor make_target(const std::vector<MnistSample>& tr, size_t k, int batch_size) {
-    std::vector<float> t(10 * batch_size, 0.0f);
-    for (size_t i = 0; i < batch_size; i++) {
-        t[10 * i + tr[k + i].label] = 1.0f;
-    }
-    return Tensor(t, batch_size, 10);
-}
-
 
 int main(int argc, char** argv) {
     // retrieves dataset from <build>/examples/data/mnist_test.csv
@@ -97,11 +79,16 @@ int main(int argc, char** argv) {
     std::println("Loading MNIST train from: {}", train_path.string());
     std::println("Loading MNIST test  from: {}", test_path.string());
 
-    auto train_data = load_mnist_csv(train_path.string());
-    auto test_data  = load_mnist_csv(test_path.string());
+    std::vector<float> x_data;
+    std::vector<float> t_data;
+    std::vector<float> x_test_data;
+    std::vector<float> t_test_data;
+    size_t n_train_samples = load_mnist_csv(train_path.string(), x_data, t_data);
+    size_t n_test_samples = load_mnist_csv(test_path.string(), x_test_data, t_test_data);
+
 
     std::println("Loaded {} train samples, {} test samples",
-                 train_data.size(), test_data.size());
+                 n_train_samples, n_test_samples);
 
     // Build 2 layer model: 784 -> 128 -> ReLU -> 10
     Sequential model(
@@ -111,61 +98,63 @@ int main(int argc, char** argv) {
     );
 
     float lr = 0.05f;
-    int epochs = 5;          // Number of times the model is trained over whole train set (repeat)
-    int batch_size = 5;
+    size_t epochs = 5;          // Number of times the model is trained over whole train set (repeat)
+    size_t batch_size = 5;
 
     std::mt19937 gen(std::random_device{}());
 
     // Training
 
-    for (int epoch = 0; epoch < epochs; ++epoch) {
+    for (size_t epoch = 0; epoch < epochs; ++epoch) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
         float epoch_loss = 0.0f;
+        shuffle_dataset(x_data, t_data, num_pixels, num_classes, gen);
 
-        for (size_t k = 0; k < train_data.size(); k += batch_size) {
-            Tensor x = make_input(train_data, k, batch_size);
-            Tensor t = make_target(train_data, k, batch_size);
-            Tensor y = model.pred(x);
+        for (size_t s = 0; s < n_train_samples; s += batch_size) {
+            size_t current_bs = std::min(batch_size, n_train_samples - s);
+            TensorView x_batch = make_batch_view(x_data, num_pixels, s, current_bs);
+            TensorView t_batch = make_batch_view(t_data, num_classes, s, current_bs);
+            TensorView y_batch = model.pred(x_batch);
+            model.grad_loss(y_batch, t_batch);
+            model.backward();
+            model.step(lr, current_bs);
 
-            float loss = total_mse_loss(y, t);
-            Tensor dE_dy = grad_loss(y, t);
-            model.backward(dE_dy);
-            model.step(lr, batch_size);
+            // End of core training loop
 
+            float loss = total_mse_loss(y_batch, t_batch);
             epoch_loss += loss;
-            if ((k / batch_size + 1) % 10000 == 0) {
+            if ((s / batch_size + 1) % 10000 == 0) {
                 std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
                 std::println("Epoch {} step {}/{} - running avg loss = {} t = {}",
-                             epoch, k + 1, train_data.size(),
-                             epoch_loss / static_cast<float>(k + 1),
+                             epoch, s + 1, n_train_samples,
+                             epoch_loss / static_cast<float>(s + 1),
                              std::chrono::duration_cast<std::chrono::seconds> (cur_time - begin).count());
             }
         }
 
-        float avg_loss = epoch_loss / static_cast<float>(train_data.size());
+        float avg_loss = epoch_loss / static_cast<float>(n_train_samples);
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::println("Epoch {} finished. Avg loss = {} runtime epoch = {}ms", epoch, avg_loss, std::chrono::duration_cast<std::chrono::milliseconds> (end - begin).count());
     }
 
     // Evaluation on test set
     int correct = 0;
-    for (size_t j = 0; j < test_data.size(); j++) {
-        Tensor x = make_input(test_data, j, 1);
-        Tensor y = model.pred(x);
+    for (size_t j = 0; j < n_test_samples; j++) {
+        TensorView x_batch = make_batch_view(x_test_data, num_pixels, j, 1);
+        TensorView y_batch = model.pred(x_batch);
 
-        const auto& yr = y.raw();
+        const auto& yr = y_batch.data;
         int pred = 0;
-        for (int i = 1; i < 10; ++i) {
+        for (int i = 1; i < num_classes; ++i) {
             if (yr[i] > yr[pred]) pred = i;
         }
 
-        if (pred == test_data[j].label) ++correct;
+        if (t_test_data[j * 10 + pred]) ++correct;
     }
 
-    float acc = 100.0f * static_cast<float>(correct) / static_cast<float>(test_data.size());
+    float acc = 100.0f * static_cast<float>(correct) / static_cast<float>(n_test_samples);
     std::println("Test accuracy: {}/{} ({:.2f}%)",
-                 correct, test_data.size(), acc);
+                 correct, n_test_samples, acc);
 
     return 0;
 }

@@ -14,14 +14,14 @@ int main() {
         {1.0f, 1.0f, 0.0f},
     };
 
-    // Model: 2 -> 4 -> 1
+    // Model: 2 -> 16 -> 1
     Sequential model(
-        Linear(2, 4),
+        Linear(2, 16),
         ReLU(),
-        Linear(4, 1)
+        Linear(16, 1)
     );
 
-    float lr = 0.01f;
+    float lr = 0.1f;
     int epochs = 50000;
 
     std::mt19937 gen(std::random_device{}());
@@ -36,7 +36,7 @@ int main() {
         Tensor t({s.y}, 1, 1);         
 
         Tensor y = model.pred(x);       // forward
-        Tensor dE_dy = grad_loss(y, t);    // gradient w.r.t. y
+        Tensor dE_dy = grad_loss(y, t);    // mse loss gradient w.r.t. y
 
         model.backward(dE_dy);          // backprop through layers
         model.step(lr);                 // SGD update
