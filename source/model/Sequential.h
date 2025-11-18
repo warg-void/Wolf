@@ -20,7 +20,8 @@ public:
     void step(float lr, size_t batch_size = 1);
 
     TensorView grad_loss(const TensorView& a, const TensorView& b);
-
+    void save(const std::string &path) const;
+    static Sequential load(const std::string &path);
 
 private:
     std::vector<std::unique_ptr<Layer>> layers;

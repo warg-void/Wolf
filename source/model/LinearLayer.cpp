@@ -4,10 +4,8 @@
 #include <execution>
 #include <utils/timer.h>
 namespace wolf {
-    LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) {
-        this->in_dim = in_dim;
-        this->out_dim = out_dim;
-
+    LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) : Layer(LayerKind::Linear), in_dim(in_dim),
+            out_dim(out_dim) {
         auto& gen = rng().gen;
         auto normal_gen = [&]() {return std::normal_distribution{0.0, std::sqrt(2.0 / in_dim)}(gen);};
         std::vector<float> temp(out_dim * in_dim);
@@ -25,15 +23,16 @@ namespace wolf {
         last_input = x;
         int batch_size = x.nrows();
         std::vector<float> out(batch_size * out_dim);
-        std::for_each(std::execution::par_unseq, idx.begin(), idx.begin() + out.size(),
-            [&](size_t j){
+        std::for_each(std::execution::par_unseq, out.begin(), out.end(),
+            [&](float& out_val){
+                size_t j  = &out_val - out.data();
                 size_t k = j % out_dim; // Output Node index
                 size_t bn = j / out_dim; // Current batch number
                 float sum = b(k);
                 for (size_t i = 0; i < in_dim; i++) {
                     sum += x(i + in_dim * bn) * W(k, i);
                 }
-                out[j] = sum;
+                out_val = sum;
             }
         ); 
         return Tensor(out, batch_size, out_dim);

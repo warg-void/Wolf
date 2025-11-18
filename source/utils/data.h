@@ -3,41 +3,9 @@
 #include <span>
 #include <random>
 #include <math/tensor.h>
-
+#include <fstream>
+#include <external/zpp_bits.h>
 namespace wolf{
-
-    void shuffle_dataset(std::span<float> x_data, std::span<float> t_data, size_t x_dim, size_t t_dim,
-        std::uniform_random_bit_generator auto& gen) {
-
-        const std::size_t num_samples = x_data.size() / x_dim;
-        if (num_samples == 0) return;
-
-        const std::size_t num_samples_t = t_data.size() / t_dim;
-        if (num_samples_t != num_samples) {
-            throw std::runtime_error("x_data / x_dim is not equal to t_data / t_dim, the number of samples");
-        }
-
-        std::vector<size_t> indices(num_samples);
-        std::iota(indices.begin(), indices.end(), 0);
-        std::shuffle(indices.begin(), indices.end(), gen);
-
-        std::vector<float> x_tmp(x_data.size());
-        std::vector<float> t_tmp(t_data.size());
-
-        for (std::size_t new_i = 0; new_i < num_samples; ++new_i) {
-            std::size_t old_i = indices[new_i];
-            std::copy_n(x_data.begin() + old_i * x_dim,
-                        x_dim,
-                        x_tmp.begin() + new_i * x_dim);
-
-            std::copy_n(t_data.begin() + old_i * t_dim,
-                        t_dim,
-                        t_tmp.begin() + new_i * t_dim);
-        }
-
-        std::copy(x_tmp.begin(), x_tmp.end(), x_data.begin());
-        std::copy(t_tmp.begin(), t_tmp.end(), t_data.begin());
-    }
 
     TensorView make_batch_view(std::span<float> x, size_t x_dim, size_t sample_number, size_t batch_size) {
         size_t offset = sample_number * x_dim;
@@ -45,12 +13,12 @@ namespace wolf{
     }
 
     inline TensorView make_batch_view_indexed(
-    std::span<float> data,                // flat [N * dim]
+    std::span<float> data,                // flattened data
     std::size_t dim,                      // features per sample
     std::span<const std::size_t> indices, // permutation
     std::size_t start_sample,             // index in indices
     std::size_t batch_size,
-    Tensor& batch_buf                     // reusable buffer tensor
+    Tensor& batch_buf                     // output data location
     ) {
         const std::size_t num_samples = data.size() / dim;
         if (num_samples == 0 || batch_size == 0) {
@@ -121,6 +89,56 @@ namespace wolf{
             );
         }
     };
+
+    void save_tensor(const wolf::Tensor& t, const std::string& path) {
+        auto [data, out] = zpp::bits::data_out();
+
+        const std::size_t rows = t.nrows();
+        const std::size_t cols = t.ncols();
+        const auto& raw      = t.raw();  // std::vector<float>
+
+        // Serialize (rows, cols, data) in that order
+        out(rows, cols, raw).or_throw();
+
+        std::ofstream file(path, std::ios::binary);
+        if (!file) {
+            throw std::runtime_error("failed to create std::ofstream for: " + path);
+        }
+
+        file.write(reinterpret_cast<const char*>(data.data()),
+                static_cast<std::streamsize>(data.size()));
+        if (!file) {
+            throw std::runtime_error("failed to write tensor to file: " + path);
+        }
+    }
+
+    Tensor load_tensor(const std::string& path) {
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (!file) {
+            throw std::runtime_error("Failed to open file: " + path);
+        }
+
+        size_t size = static_cast<std::size_t>(file.tellg());
+
+        file.seekg(0, std::ios::beg);
+
+        std::vector<std::byte> data(size);
+        if (!file.read(reinterpret_cast<char*>(data.data()),
+                    static_cast<std::streamsize>(size))) {
+            throw std::runtime_error("Failed to read file: " + path);
+        }
+
+        zpp::bits::in in(data);
+
+        size_t rows = 0;
+        size_t cols = 0;
+        std::vector<float> raw;
+
+        in(rows, cols, raw).or_throw();
+
+        return wolf::Tensor(raw, rows, cols);
+    }
+
 
 
 }

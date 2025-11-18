@@ -20,6 +20,9 @@ Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs on CP
 - Batched Learning
 ---
 
+## Warnings
+- Does not compile for libc++ yet (because it doesn't support std::execution)
+
 ### 1. Clone and build
 
 ```bash

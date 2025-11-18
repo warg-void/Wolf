@@ -1,5 +1,6 @@
 #include <math/tensor.h>
 
+
 namespace wolf {
     Tensor::Tensor(const std::vector<std::vector<float>>& input) {
         rows = input.size();

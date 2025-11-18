@@ -10,8 +10,15 @@ public:
     Tensor forward(const Tensor& x) override;
     Tensor backward(const Tensor& grad_out) override;
 
-    void step(float lr, size_t batch_size) {}
-    ReLULayer() {}
+    void step(float lr, size_t batch_size) override {}
+    void save_body(zpp::bits::out<std::vector<std::byte>>& out) const override {
+        // nothing
+        (void)out;
+    }
+    ReLULayer() : Layer(LayerKind::ReLU) {}
+    static std::unique_ptr<Layer> load_from(zpp::bits::in<std::vector<std::byte>>& in) {
+        return std::make_unique<ReLULayer>();
+    }
 
 private:
     Tensor last_input;

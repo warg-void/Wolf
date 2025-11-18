@@ -1,4 +1,7 @@
 #include <model/Sequential.h>
+#include <external/zpp_bits.h>
+#include <fstream>
+#include <model/LayerSaver.h>
 
 namespace wolf {
     Tensor Sequential::pred(const Tensor& x) {
@@ -55,6 +58,63 @@ namespace wolf {
         }
         bbuf = Tensor(out, a.rows, a.cols);
         return TensorView(bbuf);
+    }
+
+    void Sequential::save(const std::string &path) const {
+        auto [data, out] = zpp::bits::data_out();
+        std::size_t n = layers.size();
+        out(n).or_throw();
+        
+        for (const auto &ptr : layers) {
+            save_layer(out, *ptr);
+        }
+
+        std::ofstream file(path, std::ios::binary);
+        if (!file) {
+            throw std::runtime_error("Sequential::save: failed to open " + path);
+        }
+
+        file.write(reinterpret_cast<const char*>(data.data()),
+                static_cast<std::streamsize>(data.size()));
+        if (!file) {
+            throw std::runtime_error("Sequential::save: failed to write " + path);
+        }
+    }
+
+
+    Sequential Sequential::load(const std::string &path) {
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (!file) {
+            throw std::runtime_error("Sequential::load: failed to open " + path);
+        }
+
+        std::streampos end = file.tellg();
+        if (end < 0) {
+            throw std::runtime_error("Sequential::load: tellg() failed for " + path);
+        }
+
+        size_t size = static_cast<size_t>(end);
+        file.seekg(0, std::ios::beg);
+
+        std::vector<std::byte> data(size);
+        if (!file.read(reinterpret_cast<char*>(data.data()),
+                    static_cast<std::streamsize>(size))) {
+            throw std::runtime_error("Sequential::load: failed to read " + path);
+        }
+
+        zpp::bits::in in(data);
+
+        size_t n{};
+        in(n).or_throw();
+
+        Sequential seq;
+        seq.layers.reserve(n);
+
+        for (size_t i = 0; i < n; ++i) {
+            seq.layers.emplace_back(load_layer(in));
+        }
+
+        return seq;
     }
 
 }
