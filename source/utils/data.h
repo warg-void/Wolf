@@ -43,4 +43,84 @@ namespace wolf{
         size_t offset = sample_number * x_dim;
         return TensorView{x.data() + offset, batch_size, x_dim};
     }
+
+    inline TensorView make_batch_view_indexed(
+    std::span<float> data,                // flat [N * dim]
+    std::size_t dim,                      // features per sample
+    std::span<const std::size_t> indices, // permutation
+    std::size_t start_sample,             // index in indices
+    std::size_t batch_size,
+    Tensor& batch_buf                     // reusable buffer tensor
+    ) {
+        const std::size_t num_samples = data.size() / dim;
+        if (num_samples == 0 || batch_size == 0) {
+            return TensorView{nullptr, 0, dim};
+        }
+
+        if (indices.size() < num_samples) {
+            throw std::runtime_error("indices.size() < num_samples in make_batch_view_indexed");
+        }
+
+        const std::size_t needed = batch_size * dim;
+
+        // Ensure buffer has enough storage
+        if (batch_buf.empty() || batch_buf.raw().size() < needed) {
+            batch_buf = Tensor(std::vector<float>(needed), batch_size, dim);
+        }
+
+        auto& buf = batch_buf.raw();
+
+        for (std::size_t i = 0; i < batch_size; ++i) {
+            std::size_t sample_idx = indices[start_sample + i];
+            const float* src = data.data() + sample_idx * dim;
+            float* dst = buf.data() + i * dim;
+            std::copy_n(src, dim, dst);
+        }
+
+        batch_buf.set_rows(batch_size);
+        batch_buf.set_cols(dim);
+
+        return TensorView{batch_buf};
+    }
+
+    struct BatchMaker {
+        Tensor x_buf;
+        Tensor t_buf;
+        std::vector<std::size_t> indices;
+
+        BatchMaker(size_t num_samples)
+            : indices(num_samples) {
+            std::iota(indices.begin(), indices.end(), 0);
+        }
+
+        void shuffle(std::uniform_random_bit_generator auto& gen) {
+            std::shuffle(indices.begin(), indices.end(), gen);
+        }
+
+        TensorView x_batch(std::span<float> x_data,
+                        size_t x_dim,
+                        size_t start_sample,
+                        size_t batch_size) {
+            return make_batch_view_indexed(
+                x_data, x_dim,
+                std::span<const size_t>(indices),
+                start_sample, batch_size,
+                x_buf
+            );
+        }
+
+        TensorView t_batch(std::span<float> t_data,
+                        size_t t_dim,
+                        size_t start_sample,
+                        size_t batch_size) {
+            return make_batch_view_indexed(
+                t_data, t_dim,
+                std::span<const size_t>(indices),
+                start_sample, batch_size,
+                t_buf
+            );
+        }
+    };
+
+
 }

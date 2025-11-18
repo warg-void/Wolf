@@ -17,6 +17,7 @@ Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs on CP
 - Backpropagation + Stochastic Gradient Descent
 - Linear and ReLU Layers
 - Fully optimized for CPU
+- Batched Learning
 ---
 
 ### 1. Clone and build
@@ -38,7 +39,6 @@ cmake --build build
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 
 ### To implement
-- [ ] Batched learning
 - [ ] Adam and AdamW optimizers
 - [ ] Helper functions to save and load neural nets
 - [ ] Helper functions to download and parse datasets
