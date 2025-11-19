@@ -1,7 +1,19 @@
 cmake_minimum_required(VERSION 3.15)
-set (CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "-O3 -ffast-math")
-project(wolf)
+project(wolf LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+add_library(wolf_options INTERFACE)
+
+target_compile_features(wolf_options INTERFACE cxx_std_23)
+
+# Per-compiler optimization flags
+target_compile_options(wolf_options INTERFACE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3 -ffast-math>
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /fp:fast /EHsc>
+)
 
 find_package(OpenMP REQUIRED)
 

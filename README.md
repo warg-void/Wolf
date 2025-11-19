@@ -20,6 +20,9 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 - Batched Learning
 ---
 
+### Requirements
+
+Recent C++ Compiler (gcc > 14)
 
 ### 1. Clone and build
 

@@ -9,4 +9,5 @@ target_include_directories(source PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 
 
 add_library(wolf::wolf ALIAS ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} PUBLIC wolf_options)
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_CXX)
