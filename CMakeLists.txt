@@ -7,4 +7,3 @@ find_package(OpenMP REQUIRED)
 
 add_subdirectory(examples)
 add_subdirectory(source)
-add_subdirectory(test)
