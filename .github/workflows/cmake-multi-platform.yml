@@ -31,8 +31,8 @@ jobs:
             c_compiler: cl
             cpp_compiler: cl
           - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
+            c_compiler: gcc-14
+            cpp_compiler: g++-14
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
@@ -53,6 +53,18 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+    - name: Install OpenMP for clang (Ubuntu)
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libomp-dev
+    - name: Install GCC 14 (Ubuntu)
+      if: matrix.os == 'ubuntu-latest' && startsWith(matrix.c_compiler, 'gcc-14')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-14 g++-14
+        gcc-14 --version
+        g++-14 --version
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.

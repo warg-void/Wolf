@@ -19,10 +19,11 @@ namespace wolf {
     }
     Tensor LinearLayer::forward(const Tensor& x) {
         last_input = x;
-        int batch_size = x.nrows();
+        size_t batch_size = x.nrows();
         std::vector<float> out(batch_size * out_dim);
         #pragma omp parallel for 
-        for (size_t j = 0; j < out_dim * batch_size; j++) {
+        for (std::ptrdiff_t j_ = 0; j_ < out_dim * batch_size; j_++) {
+            size_t j = static_cast<size_t>(j_);
             const size_t k  = j % out_dim;      // output neuron index
             const size_t bn = j / out_dim;      // batch index
             float sum = b(k);
@@ -51,7 +52,8 @@ namespace wolf {
         //     }
         // }
         #pragma omp parallel for 
-        for (size_t i = 0; i < out_dim; i++) {
+        for (std::ptrdiff_t i_ = 0; i_ < out_dim; i_++) {
+            size_t i = static_cast<size_t>(i_);
             float db_acc = 0.0f;
             const size_t row = i * in_dim;
 
@@ -68,7 +70,8 @@ namespace wolf {
             db_raw[i] = db_acc;
         }
         #pragma omp parallel for 
-        for (size_t j = 0; j < in_dim; j++) {
+        for (std::ptrdiff_t j_ = 0; j_ < in_dim; j_++) {
+            size_t j = static_cast<size_t>(j_);
             for (size_t b = 0; b < batch_size; ++b) {
                 const float* gy_b = &gy[b * out_dim];        
                 float sum = 0.0f;
@@ -92,13 +95,15 @@ namespace wolf {
         auto& db_raw = db.raw();
         const float scale = lr / static_cast<float>(batch_size);
         #pragma omp parallel for 
-        for (size_t i = 0; i < W_raw.size(); i++) {
+        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
             W_raw[i] -= scale * dW_raw[i];
             dW_raw[i] = 0.0f;
         }
 
         #pragma omp parallel for 
-        for (size_t i = 0; i < b_raw.size(); i++) {
+        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
             b_raw[i] -= scale * db_raw[i];
             db_raw[i] = 0.0f;
         }
