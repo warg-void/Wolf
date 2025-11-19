@@ -20,8 +20,6 @@ Trains a fully connected network to **~96% accuracy on MNIST** in 3 epochs on CP
 - Batched Learning
 ---
 
-## Warnings
-- Does not compile for libc++ yet (because it doesn't support std::execution)
 
 ### 1. Clone and build
 
@@ -38,6 +36,9 @@ cmake --build build
 ./build/examples/irisClassifier
 ./build/examples/mnistClassifier
 ```
+## External Libraries Used
+- OpenMP (for parallelization)
+- [zpp_bits](https://github.com/eyalz800/zpp_bits) (for serializing and deserializing)
 
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 

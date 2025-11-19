@@ -34,7 +34,6 @@ public:
 private:
     size_t in_dim;
     size_t out_dim;
-    std::vector<size_t> idx; // [out_dim x in_dim] for indexing
     Tensor W;   // [out_dim x in_dim]
     Tensor dW;
     Tensor b;   // [out_dim x 1]
