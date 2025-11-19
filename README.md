@@ -5,7 +5,7 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 
 # [Documentation](https://warg-void.github.io/wolf-docs/)
 
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
+[![Build](https://github.com/warg-void/Wolf/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=main)](https://github.com/warg-void/Wolf/actions/workflows/cmake-multi-platform.yml)
 ![C++](https://img.shields.io/badge/C%2B%2B-23-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -18,6 +18,7 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 - Linear and ReLU Layers
 - Fully optimized for CPU
 - Batched Learning
+- Helper functions to save and load neural nets
 ---
 
 ### Requirements
@@ -47,8 +48,7 @@ cmake --build build
 
 ### To implement
 - [ ] Adam and AdamW optimizers
-- [ ] Helper functions to save and load neural nets
-- [ ] Helper functions to download and parse datasets
+- [ ] More Types of Layers and Loss
 - [ ] Write Docs
 - [ ] ROCm and rocBLAS 
 - [ ] cuDA and cuBLAS

@@ -2,8 +2,13 @@
 #include <external/zpp_bits.h>
 #include <fstream>
 #include <model/LayerSaver.h>
+#include <model/optimizers.h>
 
 namespace wolf {
+    void Sequential::set_optimizer(OptimVariant cfg) {
+        optim_cfg = std::move(cfg);
+    }
+
     Tensor Sequential::pred(const Tensor& x) {
         Tensor out = x;
         for (auto& l : layers) {
@@ -47,6 +52,29 @@ namespace wolf {
         for (size_t i = layers.size() - 1; i < layers.size(); --i) {
             layers[i]->step(lr, batch_size);
         }
+    }
+
+    void Sequential::step(size_t batch_size) {
+        if (!optim_cfg) {
+            throw std::runtime_error("Sequential::step: optimizer not set");
+        }
+        if (std::holds_alternative<SGD>(*optim_cfg)) {
+            const auto& cfg = std::get<SGD>(*optim_cfg);
+            for (auto& l : layers) {
+                l->step_SGD(cfg.lr, batch_size);
+            }
+        } else if (std::holds_alternative<Momentum>(*optim_cfg)) {
+            const auto& cfg = std::get<Momentum>(*optim_cfg);
+            for (auto& l : layers) {
+                l->step_momentum(cfg.lr, cfg.mu, batch_size);
+            }
+        } 
+        else if (std::holds_alternative<RMSProp>(*optim_cfg)) {
+            const auto& cfg = std::get<RMSProp>(*optim_cfg);
+            for (auto& l : layers) {
+                l->step_RMSProp(cfg.lr, cfg.alpha, cfg.eps, batch_size);
+            }
+        } 
     }
 
     TensorView Sequential::grad_loss(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output

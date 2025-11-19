@@ -11,6 +11,9 @@ public:
     Tensor backward(const Tensor& grad_out) override;
 
     void step(float lr, size_t batch_size) override {}
+    void step_SGD(float lr, size_t batch_size) override {}
+    void step_momentum(float lr, float mu, size_t batch_size) override {}
+    void step_RMSProp(float lr, float alpha, float eps, size_t batch_size) override {}
     void save_body(zpp::bits::out<std::vector<std::byte>>& out) const override {
         // nothing
         (void)out;

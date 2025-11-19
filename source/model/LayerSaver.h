@@ -12,7 +12,7 @@
 namespace wolf {
 
     inline void save_layer(zpp::bits::out<std::vector<std::byte>>& out,
-                       const Layer& layer) {
+                    const Layer& layer) {
         LayerKind kind = layer.kind();
         out(kind).or_throw();
         layer.save_body(out);

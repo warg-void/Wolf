@@ -96,10 +96,12 @@ int main(int argc, char** argv) {
         ReLU(),
         Linear(128, num_classes)
     );
-
     float lr = 0.05f;
     size_t epochs = 5;          // Number of times the model is trained over whole train set (repeat)
     size_t batch_size = 5;
+    float momentum = 0.9;
+    OptimVariant cfg = Momentum{lr, momentum};
+    model.set_optimizer(cfg);
 
     std::mt19937 gen(std::random_device{}());
     BatchMaker batcher(n_train_samples);
@@ -117,7 +119,7 @@ int main(int argc, char** argv) {
             TensorView y_batch = model.pred(x_batch);
             model.grad_loss(y_batch, t_batch);
             model.backward();
-            model.step(lr, current_bs);
+            model.step(current_bs);
 
             // End of core training loop
 

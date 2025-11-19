@@ -12,6 +12,9 @@ public:
     Tensor forward(const Tensor& x) override;
     Tensor backward(const Tensor& grad_out) override;
     void step(float lr, size_t batch_size) override;
+    void step_SGD(float lr, size_t batch_size) override;
+    void step_momentum(float lr, float mu, size_t batch_size) override;
+    void step_RMSProp(float lr, float alpha, float eps, size_t batch_size) override;
     size_t in_size() const {return in_dim;}
     size_t out_size() const {return out_dim;}
     Tensor weights() const {return W;}
@@ -39,6 +42,11 @@ private:
     Tensor b;   // [out_dim x 1]
     Tensor db;
     Tensor last_input; // [B x in_dim]
+    Tensor vW; // Momentum term
+    Tensor vB;
+    Tensor rW; // RMSProp term
+    Tensor rB;
+    float mu;
 };
 
 } // namespace nn

@@ -14,8 +14,12 @@ namespace wolf {
         std::ranges::generate(temp_b, normal_gen);
         W = Tensor(temp, out_dim, in_dim);
         dW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
+        vW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
         b = Tensor(temp_b, 1, out_dim);
+        vB = Tensor(temp_b, 1, out_dim);
         db = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
+        rW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
+        rB = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
     }
     Tensor LinearLayer::forward(const Tensor& x) {
         last_input = x;
@@ -87,7 +91,7 @@ namespace wolf {
 
     }
 
-    void LinearLayer::step(float lr, size_t batch_size) {
+    void LinearLayer::step_SGD(float lr, size_t batch_size) {
         // SGD
         auto& W_raw = W.raw();
         auto& dW_raw = dW.raw();
@@ -97,7 +101,7 @@ namespace wolf {
         #pragma omp parallel for 
         for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
             size_t i = static_cast<size_t>(i_);
-            W_raw[i] -= scale * dW_raw[i];
+            W_raw[i] -= scale * dW_raw[i] ;
             dW_raw[i] = 0.0f;
         }
 
@@ -108,5 +112,60 @@ namespace wolf {
             db_raw[i] = 0.0f;
         }
 
+    }
+
+    void LinearLayer::step_momentum(float lr, float mu, size_t batch_size) {
+        auto& W_raw = W.raw();
+        auto& dW_raw = dW.raw();
+        auto& b_raw = b.raw();
+        auto& db_raw = db.raw();
+        auto& vW_raw = vW.raw();
+        auto& vB_raw = vB.raw();
+        const float scale = lr / static_cast<float>(batch_size);
+        #pragma omp parallel for 
+        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
+            vW_raw[i] = -scale * dW_raw[i] + mu * vW_raw[i];
+            W_raw[i] += vW_raw[i];
+            dW_raw[i] = 0.0f;
+        }
+
+        #pragma omp parallel for 
+        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
+            vB_raw[i] = -scale * db_raw[i] + mu * vB_raw[i];
+            b_raw[i] += vB_raw[i];
+            db_raw[i] = 0.0f;
+        }
+    }
+
+    void LinearLayer::step_RMSProp(float lr, float alpha, float eps, size_t batch_size) {
+        auto& W_raw = W.raw();
+        auto& dW_raw = dW.raw();
+        auto& rW_raw = rW.raw();
+        auto& b_raw = b.raw();
+        auto& db_raw = db.raw();
+        auto& rB_raw = rB.raw();
+        const float scale = lr / static_cast<float>(batch_size);
+        #pragma omp parallel for 
+        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
+            rW_raw[i] = alpha * rW_raw[i] +  (1.0f - alpha) * dW_raw[i] * dW_raw[i];
+            W_raw[i] -= scale * dW_raw[i] / (sqrt(rW_raw[i]) + eps);
+            dW_raw[i] = 0.0f;
+        }
+
+        #pragma omp parallel for 
+        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
+            size_t i = static_cast<size_t>(i_);
+            rB_raw[i] = alpha * rB_raw[i] + (1.0f - alpha) * db_raw[i] * db_raw[i];
+            b_raw[i] -= scale * db_raw[i] / (std::sqrt(rB_raw[i]) + eps);
+            db_raw[i] = 0.0f;
+        }
+    }
+
+    // to delete
+    void LinearLayer::step(float lr, size_t batch_size) {
+        step_SGD(lr, batch_size);
     }
 }

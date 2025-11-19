@@ -95,7 +95,7 @@ namespace wolf{
 
         const std::size_t rows = t.nrows();
         const std::size_t cols = t.ncols();
-        const auto& raw      = t.raw();  // std::vector<float>
+        const std::vector<float> raw      = t.raw();
 
         // Serialize (rows, cols, data) in that order
         out(rows, cols, raw).or_throw();
@@ -138,6 +138,33 @@ namespace wolf{
 
         return wolf::Tensor(raw, rows, cols);
     }
+
+    void export_tensor_csv(const wolf::Tensor& t, const std::string& path) {
+        const std::size_t rows = t.nrows();
+        const std::size_t cols = t.ncols();
+        const std::vector<float>& raw = t.raw();
+
+        std::ofstream file(path);
+        if (!file) {
+            throw std::runtime_error("failed to create std::ofstream for: " + path);
+        }
+
+        for (std::size_t r = 0; r < rows; ++r) {
+            const std::size_t base = r * cols;
+            for (std::size_t c = 0; c < cols; ++c) {
+                file << raw[base + c];
+                if (c + 1 < cols) {
+                    file << ',';
+                }
+            }
+            file << '\n';
+        }
+
+        if (!file) {
+            throw std::runtime_error("failed to write tensor to CSV file: " + path);
+        }
+    }
+
 
 
 
