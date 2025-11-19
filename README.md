@@ -53,3 +53,6 @@ cmake --build build
 - [ ] ROCm and rocBLAS 
 - [ ] cuDA and cuBLAS
 - [ ] CNNs
+
+### References:
+1) Deep Learning: Foundations and Concepts: by Christopher M. Bishop and Hugh Bishop, Springer Cham (2023).

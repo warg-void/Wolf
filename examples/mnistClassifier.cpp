@@ -96,11 +96,10 @@ int main(int argc, char** argv) {
         ReLU(),
         Linear(128, num_classes)
     );
-    float lr = 0.05f;
+    float lr = 0.1f;
     size_t epochs = 5;          // Number of times the model is trained over whole train set (repeat)
     size_t batch_size = 5;
-    float momentum = 0.9;
-    OptimVariant cfg = Momentum{lr, momentum};
+    OptimVariant cfg = SGD{lr};
     model.set_optimizer(cfg);
 
     std::mt19937 gen(std::random_device{}());
