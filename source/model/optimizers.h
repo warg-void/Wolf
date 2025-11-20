@@ -25,13 +25,24 @@ namespace wolf {
         float alpha;
         float eps;
 
-        RMSProp(float lr_, float alpha_ = 0.9, float eps_ = 0.000000001)
+        RMSProp(float lr_, float alpha_ = 0.9f, float eps_ = 1e-8f)
             : lr(lr_), alpha(alpha_), eps(eps_) {}
+    };
+
+    struct Adam { // Adaptive Moments
+        float lr;
+        float beta1;
+        float beta2;
+        float eps;
+
+        Adam(float lr_, float beta1_ = 0.9f, float beta2_ = 0.99f, float eps_ = 1e-8f) 
+            : lr(lr_), beta1(beta1_), beta2(beta2_), eps(eps_) {}
     };
     
     using OptimVariant = std::variant<
     SGD,
     Momentum,
-    RMSProp
+    RMSProp,
+    Adam
     >;
 }

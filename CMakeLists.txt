@@ -11,8 +11,8 @@ target_compile_features(wolf_options INTERFACE cxx_std_23)
 
 # Per-compiler optimization flags
 target_compile_options(wolf_options INTERFACE
-    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3 -ffast-math>
-    $<$<CXX_COMPILER_ID:MSVC>:/O2 /fp:fast /EHsc>
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3>
+    $<$<CXX_COMPILER_ID:MSVC>:/O2 /EHsc>
 )
 
 find_package(OpenMP REQUIRED)

@@ -3,10 +3,12 @@
 #include <fstream>
 #include <model/LayerSaver.h>
 #include <model/optimizers.h>
+#include <cmath>
 
 namespace wolf {
     void Sequential::set_optimizer(OptimVariant cfg) {
         optim_cfg = std::move(cfg);
+        step_t = 0;
     }
 
     Tensor Sequential::pred(const Tensor& x) {
@@ -56,25 +58,36 @@ namespace wolf {
 
     void Sequential::step(size_t batch_size) {
         if (!optim_cfg) {
-            throw std::runtime_error("Sequential::step: optimizer not set");
+            throw std::runtime_error("Optimizer not set");
         }
-        if (std::holds_alternative<SGD>(*optim_cfg)) {
-            const auto& cfg = std::get<SGD>(*optim_cfg);
-            for (auto& l : layers) {
-                l->step_SGD(cfg.lr, batch_size);
+        std::visit([&](auto& opt){
+            using Opt = std::decay_t<decltype(opt)>;
+            if constexpr (std::is_same_v<Opt, SGD>) {
+                for (auto& l : layers) {
+                        l->step_SGD(opt.lr, batch_size);
+                    }
+            } else if constexpr (std::is_same_v<Opt, RMSProp>) {
+                    for (auto& l : layers) {
+                        l->step_RMSProp(opt.lr, opt.alpha, opt.eps, batch_size);
+                    }
+            } else if constexpr(std::is_same_v<Opt, Momentum>) {
+                    for (auto& l : layers) {
+                         l->step_momentum(opt.lr, opt.mu, batch_size);
+                    }
             }
-        } else if (std::holds_alternative<Momentum>(*optim_cfg)) {
-            const auto& cfg = std::get<Momentum>(*optim_cfg);
-            for (auto& l : layers) {
-                l->step_momentum(cfg.lr, cfg.mu, batch_size);
+                
+            else if constexpr (std::is_same_v<Opt, Adam>) {
+                ++step_t;
+                const float bc1 = 1.0f - std::pow(opt.beta1, static_cast<float>(step_t));
+                const float bc2 = 1.0f - std::pow(opt.beta2, static_cast<float>(step_t));
+
+                for (auto& l : layers) {
+                    l->step_Adam(opt.lr, opt.beta1, opt.beta2, opt.eps,
+                                bc1, bc2, batch_size);
+                }
             }
-        } 
-        else if (std::holds_alternative<RMSProp>(*optim_cfg)) {
-            const auto& cfg = std::get<RMSProp>(*optim_cfg);
-            for (auto& l : layers) {
-                l->step_RMSProp(cfg.lr, cfg.alpha, cfg.eps, batch_size);
-            }
-        } 
+        }, *optim_cfg);
+
     }
 
     TensorView Sequential::grad_loss(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output

@@ -32,6 +32,7 @@ private:
     Tensor bbuf; // Backward buffer
     Tensor grad_out; // dE_dy
     std::optional<OptimVariant> optim_cfg;
+    size_t step_t = 0;
 };
 
 }

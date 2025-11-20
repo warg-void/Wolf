@@ -42,7 +42,6 @@ if (BUILD_MNIST)
             COMMENT "Downloading MNIST CSV to ${MNIST_DATA_DIR}"
         )
 
-        # A phony target that depends on the actual file
         add_custom_target(mnist_data
             DEPENDS "${MNIST_TRAIN_CSV}"
         )

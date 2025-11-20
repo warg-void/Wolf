@@ -19,6 +19,7 @@ public:
     virtual void step_SGD(float lr, size_t batch_size) = 0;
     virtual void step_momentum(float lr, float mu, size_t batch_size) = 0;
     virtual void step_RMSProp(float lr, float alpha, float eps, size_t batch_size) = 0;
+    virtual void step_Adam(float lr, float beta1, float beta2, float eps, float bc1, float bc2, size_t batch_size) = 0;
     virtual ~Layer() = default;
     LayerKind kind() const noexcept { return _kind; }
     virtual void save_body(zpp::bits::out<std::vector<std::byte>>& out) const = 0;

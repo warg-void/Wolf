@@ -1,7 +1,6 @@
 #include <model/LinearLayer.h>
 #include <math/rng.h>
 #include <algorithm>
-#include <execution>
 #include <utils/timer.h>
 namespace wolf {
     LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) : Layer(LayerKind::Linear), in_dim(in_dim),
@@ -16,7 +15,7 @@ namespace wolf {
         dW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
         vW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
         b = Tensor(temp_b, 1, out_dim);
-        vB = Tensor(temp_b, 1, out_dim);
+        vB = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
         db = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
         rW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
         rB = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
@@ -151,7 +150,7 @@ namespace wolf {
         for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
             size_t i = static_cast<size_t>(i_);
             rW_raw[i] = alpha * rW_raw[i] +  (1.0f - alpha) * dW_raw[i] * dW_raw[i];
-            W_raw[i] -= scale * dW_raw[i] / (sqrt(rW_raw[i]) + eps);
+            W_raw[i] -= scale * dW_raw[i] / (std::sqrt(rW_raw[i]) + eps);
             dW_raw[i] = 0.0f;
         }
 
@@ -163,6 +162,7 @@ namespace wolf {
             db_raw[i] = 0.0f;
         }
     }
+
 
     // to delete
     void LinearLayer::step(float lr, size_t batch_size) {

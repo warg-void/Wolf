@@ -96,10 +96,10 @@ int main(int argc, char** argv) {
         ReLU(),
         Linear(128, num_classes)
     );
-    float lr = 0.1f;
+    float lr = 0.01f;
     size_t epochs = 5;          // Number of times the model is trained over whole train set (repeat)
     size_t batch_size = 5;
-    OptimVariant cfg = SGD{lr};
+    OptimVariant cfg = Adam{lr};
     model.set_optimizer(cfg);
 
     std::mt19937 gen(std::random_device{}());
@@ -116,6 +116,17 @@ int main(int argc, char** argv) {
             TensorView x_batch = batcher.x_batch(x_data, num_pixels, s, current_bs);
             TensorView t_batch = batcher.t_batch(t_data, num_classes, s, current_bs);
             TensorView y_batch = model.pred(x_batch);
+            auto* y_ptr = y_batch.data;
+            size_t y_size = y_batch.rows * y_batch.cols;
+
+            for (size_t i = 0; i < y_size; ++i) {
+                if (!std::isfinite(y_ptr[i])) {
+                    std::printf("NaN/Inf in predictions BEFORE loss at epoch=%zu step=%zu, i=%zu, value=%g\n",
+                                epoch, s, i, y_ptr[i]);
+                    std::abort();
+                }
+            }
+
             model.grad_loss(y_batch, t_batch);
             model.backward();
             model.step(current_bs);

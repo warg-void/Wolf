@@ -15,6 +15,7 @@ public:
     void step_SGD(float lr, size_t batch_size) override;
     void step_momentum(float lr, float mu, size_t batch_size) override;
     void step_RMSProp(float lr, float alpha, float eps, size_t batch_size) override;
+    void step_Adam(float lr, float beta1, float beta2, float eps, float bc1, float bc2, size_t batch_size) override;
     size_t in_size() const {return in_dim;}
     size_t out_size() const {return out_dim;}
     Tensor weights() const {return W;}
