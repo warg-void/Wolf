@@ -15,7 +15,6 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
   - [Features](#features)
     - [Build from Source (CMake)](#build-from-source-cmake)
   - [External Libraries Used](#external-libraries-used)
-  - [Preliminary Speed Comparison vs pytorch's nn.Sequential(CPU)](#preliminary-speed-comparison-vs-pytorchs-nnsequentialcpu)
     - [To implement](#to-implement)
     - [References](#references)
 ---
@@ -54,13 +53,7 @@ cmake --build build
 - OpenMP (for parallelization)
 - [zpp_bits](https://github.com/eyalz800/zpp_bits) (for serializing and deserializing)
 
-## Preliminary Speed Comparison vs pytorch's nn.Sequential(CPU) 
 
-<img src="benchmark/benchmarkresult.png" alt="benchmark" width="400"/>
-
-- **Same accuracy more than 10x faster**
-  
-<div/>
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 
 ### To implement
