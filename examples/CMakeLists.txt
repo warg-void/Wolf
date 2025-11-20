@@ -2,17 +2,6 @@ project(examples)
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/data)
 
-# Copy iris.csv from source tree to build tree
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data/iris.csv
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data)
-
-add_executable(singleNeuron singleNeuron.cpp)
-add_executable(xortest xortest.cpp)
-add_executable(irisClassifer irisClassifier.cpp)
-
-target_link_libraries(singleNeuron PRIVATE wolf::wolf wolf_options)
-target_link_libraries(xortest PRIVATE wolf::wolf wolf_options)
-target_link_libraries(irisClassifer PRIVATE wolf::wolf wolf_options)
 option(BUILD_MNIST "Build MNIST example" ON)
 if (BUILD_MNIST)
     add_executable(mnistClassifier mnistClassifier.cpp)
