@@ -1,5 +1,5 @@
 // This file is separated from the rest to disable the compiler option ffast-math
-// which will cause infinites in the computation.
+// which will cause nans in the computation.
 #include <model/LinearLayer.h>
 #include <cmath>
 

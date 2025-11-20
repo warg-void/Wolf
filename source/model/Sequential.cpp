@@ -90,12 +90,54 @@ namespace wolf {
 
     }
 
-    TensorView Sequential::grad_loss(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output
+    TensorView Sequential::compute_grad(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output
         // Input tensor size: batch_size x feature_dim
+        size_t a_rows = a.rows, a_cols = a.cols;
         size_t a_size = a.rows * a.cols;
         std::vector<float> out(a_size);
-        for (size_t i = 0; i < a_size; i++) {
-            out[i] = a.data[i] - b.data[i];
+        switch (loss_cfg.l) {
+            case LossType::MSE:
+                for (size_t i = 0; i < a_size; i++) {
+                    out[i] = a.data[i] - b.data[i];
+                }
+                break;
+            case LossType::CrossEntropy: {
+                for (size_t i = 0; i < a_rows; ++i) {
+                    const size_t row = i * a_cols;
+
+                    float m = a.data[row];
+                    for (size_t j = 1; j < a_cols; ++j) {
+                        m = std::max(m, a.data[row + j]);
+                    }
+                    float sum = 0.0f;
+                    for (size_t j = 0; j < a_cols; ++j) {
+                        float e = std::exp(a.data[row + j] - m);
+                        out[row + j] = e; 
+                        sum += e;
+                    }
+                    const float inv_sum = 1.0f / sum;
+                    for (size_t j = 0; j < a_cols; ++j) {
+                        float p = out[row + j] * inv_sum;
+                        out[row + j] = p - b.data[row + j];
+                    }
+                }
+                break;
+            }
+            case LossType::BCEWithLogits: {
+                for (size_t i = 0; i < a_size; i++) {
+                    // Sigmoid activation
+                    float z = a.data[i];
+                    float y;
+                    if (z >= 0.0f) {
+                        float ez = std::exp(-z);
+                        y = 1.0f / (1.0f + ez);
+                    } else {
+                        float ez = std::exp(z);
+                        y = ez / (1.0f + ez);
+                    }
+                    out[i] = y - b.data[i];
+                }
+            }
         }
         bbuf = Tensor(out, a.rows, a.cols);
         return TensorView(bbuf);

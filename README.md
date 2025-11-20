@@ -19,6 +19,7 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 - Fully optimized for CPU
 - Batched Learning
 - Helper functions to save and load neural nets
+- Adam, Momentum and RMSProp Optimizer
 ---
 
 ### Requirements
@@ -47,8 +48,8 @@ cmake --build build
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 
 ### To implement
-- [ ] Adam and AdamW optimizers
 - [ ] More Types of Layers and Loss
+- [ ] AdamW optimizer
 - [ ] Write Docs
 - [ ] ROCm and rocBLAS 
 - [ ] cuDA and cuBLAS

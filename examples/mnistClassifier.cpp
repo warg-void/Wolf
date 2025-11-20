@@ -96,11 +96,12 @@ int main(int argc, char** argv) {
         ReLU(),
         Linear(128, num_classes)
     );
-    float lr = 0.01f;
+    float lr = 0.02f;
     size_t epochs = 5;          // Number of times the model is trained over whole train set (repeat)
     size_t batch_size = 5;
-    OptimVariant cfg = Adam{lr};
+    OptimVariant cfg = SGD{lr};
     model.set_optimizer(cfg);
+    model.set_loss(LossType::CrossEntropy);
 
     std::mt19937 gen(std::random_device{}());
     BatchMaker batcher(n_train_samples);
@@ -115,26 +116,15 @@ int main(int argc, char** argv) {
             size_t current_bs = std::min(batch_size, n_train_samples - s);
             TensorView x_batch = batcher.x_batch(x_data, num_pixels, s, current_bs);
             TensorView t_batch = batcher.t_batch(t_data, num_classes, s, current_bs);
-            TensorView y_batch = model.pred(x_batch);
-            auto* y_ptr = y_batch.data;
-            size_t y_size = y_batch.rows * y_batch.cols;
-
-            for (size_t i = 0; i < y_size; ++i) {
-                if (!std::isfinite(y_ptr[i])) {
-                    std::printf("NaN/Inf in predictions BEFORE loss at epoch=%zu step=%zu, i=%zu, value=%g\n",
-                                epoch, s, i, y_ptr[i]);
-                    std::abort();
-                }
-            }
-
-            model.grad_loss(y_batch, t_batch);
+            TensorView logits = model.pred(x_batch);
+            model.compute_grad(logits, t_batch);
             model.backward();
             model.step(current_bs);
 
             // End of core training loop
 
-            float loss = total_mse_loss(y_batch, t_batch);
-            epoch_loss += loss;
+            float loss = cross_entropy_loss(logits, t_batch);
+            epoch_loss += loss * static_cast<float>(current_bs);
             if ((s / batch_size + 1) % 10000 == 0) {
                 std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
                 std::println("Epoch {} step {}/{} - running avg loss = {} t = {}",

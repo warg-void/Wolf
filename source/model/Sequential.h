@@ -3,6 +3,7 @@
 #include <memory>
 #include <model/Layer.h>
 #include <model/optimizers.h>
+#include <model/Loss.h>
 
 namespace wolf {
 
@@ -21,8 +22,8 @@ public:
     TensorView backward();
     void step(float lr, size_t batch_size = 1);
     void step(size_t batch_size = 1);
-
-    TensorView grad_loss(const TensorView& a, const TensorView& b);
+    void set_loss(LossType a) {loss_cfg.l = a;}
+    TensorView compute_grad(const TensorView& a, const TensorView& b);
     void save(const std::string &path) const;
     static Sequential load(const std::string &path);
 
@@ -33,6 +34,7 @@ private:
     Tensor grad_out; // dE_dy
     std::optional<OptimVariant> optim_cfg;
     size_t step_t = 0;
+    LossConfig loss_cfg;
 };
 
 }
