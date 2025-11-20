@@ -7,7 +7,6 @@
 #include <model/ReLU.h>
 #include <model/Sequential.h>
 #include <model/LayerFactory.h>
-#include <math/loss.h>
 #include <utils/data.h>
 
 #endif

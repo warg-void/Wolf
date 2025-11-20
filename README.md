@@ -1,7 +1,7 @@
-# Wolf — C++ Neural Net Library
+# Wolf — A Fast, Native C++ Neural Net Library
 
 Wolf is a barebones C++23 neural network implementation.
-Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CPU in **<1 second** without any external ML frameworks. It is also optimized for CPU and has been tested to run more than **5x** faster than pytorch's CPU.
+Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CPU in **<1 second** without any external ML frameworks. It is also optimized for CPU and has been tested to run more than **10x** faster than pytorch's CPU implementation for nn.Sequential.
 
 # [Documentation](https://warg-void.github.io/wolf-docs/)
 
@@ -9,8 +9,16 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 ![C++](https://img.shields.io/badge/C%2B%2B-23-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
----
 
+- [Wolf — A Fast, Native C++ Neural Net Library](#wolf--a-fast-native-c-neural-net-library)
+- [Documentation](#documentation)
+  - [Features](#features)
+    - [Build from Source (CMake)](#build-from-source-cmake)
+  - [External Libraries Used](#external-libraries-used)
+  - [Preliminary Speed Comparison vs pytorch's nn.Sequential(CPU)](#preliminary-speed-comparison-vs-pytorchs-nnsequentialcpu)
+    - [To implement](#to-implement)
+    - [References](#references)
+---
 ## Features 
 
 - Fully connected feed-forward neural networks
@@ -20,13 +28,14 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 - Batched Learning
 - Helper functions to save and load neural nets
 - Adam, Momentum and RMSProp Optimizer
+- MSE, Cross Entropy and Binary Cross Entropy cross 
 ---
 
-### Requirements
+### Build from Source (CMake)
 
-Recent C++ Compiler (gcc > 14)
+Requirements: Recent C++ Compiler (gcc > 14)
 
-### 1. Clone and build
+1. Clone and build
 
 ```bash
 git clone https://github.com/warg-void/Wolf.git
@@ -34,7 +43,7 @@ cd Wolf
 cmake -B build -DBUILD_MNIST ON
 cmake --build build
 ```
-### 2. Run the examples
+2. Run the examples
 
 ```bash
 ./build/examples/xortest
@@ -45,6 +54,13 @@ cmake --build build
 - OpenMP (for parallelization)
 - [zpp_bits](https://github.com/eyalz800/zpp_bits) (for serializing and deserializing)
 
+## Preliminary Speed Comparison vs pytorch's nn.Sequential(CPU) 
+
+<img src="benchmark/benchmarkresult.png" alt="benchmark" width="400"/>
+
+- **Same accuracy more than 10x faster**
+  
+<div/>
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 
 ### To implement
@@ -55,5 +71,5 @@ cmake --build build
 - [ ] cuDA and cuBLAS
 - [ ] CNNs
 
-### References:
+### References
 1) Deep Learning: Foundations and Concepts: by Christopher M. Bishop and Hugh Bishop, Springer Cham (2023).

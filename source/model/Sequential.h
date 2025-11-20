@@ -23,7 +23,7 @@ public:
     void step(float lr, size_t batch_size = 1);
     void step(size_t batch_size = 1);
     void set_loss(LossType a) {loss_cfg.l = a;}
-    TensorView compute_grad(const TensorView& a, const TensorView& b);
+    TensorView compute_grad_loss(const TensorView& a, const TensorView& b);
     void save(const std::string &path) const;
     static Sequential load(const std::string &path);
 

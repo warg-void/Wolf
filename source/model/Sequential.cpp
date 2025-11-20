@@ -90,7 +90,7 @@ namespace wolf {
 
     }
 
-    TensorView Sequential::compute_grad(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output
+    TensorView Sequential::compute_grad_loss(const TensorView& a, const TensorView& b) { // Gradient of loss w.r.t output
         // Input tensor size: batch_size x feature_dim
         size_t a_rows = a.rows, a_cols = a.cols;
         size_t a_size = a.rows * a.cols;

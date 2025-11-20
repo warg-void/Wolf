@@ -117,21 +117,14 @@ int main(int argc, char** argv) {
             TensorView x_batch = batcher.x_batch(x_data, num_pixels, s, current_bs);
             TensorView t_batch = batcher.t_batch(t_data, num_classes, s, current_bs);
             TensorView logits = model.pred(x_batch);
-            model.compute_grad(logits, t_batch);
+            model.compute_grad_loss(logits, t_batch);
             model.backward();
             model.step(current_bs);
 
             // End of core training loop
 
             float loss = cross_entropy_loss(logits, t_batch);
-            epoch_loss += loss * static_cast<float>(current_bs);
-            if ((s / batch_size + 1) % 10000 == 0) {
-                std::chrono::steady_clock::time_point cur_time = std::chrono::steady_clock::now();
-                std::println("Epoch {} step {}/{} - running avg loss = {} t = {}",
-                             epoch, s + 1, n_train_samples,
-                             epoch_loss / static_cast<float>(s + 1),
-                             std::chrono::duration_cast<std::chrono::seconds> (cur_time - begin).count());
-            }
+            epoch_loss += loss;
         }
 
         float avg_loss = epoch_loss / static_cast<float>(n_train_samples);
