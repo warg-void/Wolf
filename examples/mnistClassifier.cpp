@@ -111,7 +111,6 @@ int main(int argc, char** argv) {
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         float epoch_loss = 0.0f;
         batcher.shuffle(gen);
-
         for (size_t s = 0; s < n_train_samples; s += batch_size) {
             size_t current_bs = std::min(batch_size, n_train_samples - s);
             TensorView x_batch = batcher.x_batch(x_data, num_pixels, s, current_bs);

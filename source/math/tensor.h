@@ -13,7 +13,9 @@ private:
 public:
     Tensor() = default;
     Tensor(const std::vector<float>& v, size_t r, size_t c)
-        : data_(v), rows(r), cols(c) {}    
+        : data_(v), rows(r), cols(c) {}
+    Tensor(std::vector<float>&& v, size_t r, size_t c)
+        : data_(std::move(v)), rows(r), cols(c) {}    
     Tensor(const std::vector<std::vector<float>>& input);
     size_t nrows() const {return rows;}
     size_t ncols() const {return cols;}

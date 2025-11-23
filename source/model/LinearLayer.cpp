@@ -11,10 +11,10 @@ namespace wolf {
         std::vector<float> temp_b(y_dim);
         std::ranges::generate(temp, normal_gen);
         std::ranges::generate(temp_b, normal_gen);
-        W = Tensor(temp, y_dim, x_dim);
+        W = Tensor(std::move(temp), y_dim, x_dim);
         dW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
         vW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
-        b = Tensor(temp_b, 1, y_dim);
+        b = Tensor(std::move(temp_b), 1, y_dim);
         vb = Tensor(std::vector<float>(y_dim, 0.0f), 1, y_dim);
         db = Tensor(std::vector<float>(y_dim, 0.0f), 1, y_dim);
         rW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
@@ -35,7 +35,7 @@ namespace wolf {
             }
             out[j] = sum;
         }
-        return Tensor(out, batch_size, y_dim);
+        return Tensor(std::move(out), batch_size, y_dim);
     }
 
     Tensor LinearLayer::backward(const Tensor& grad_out) {
@@ -80,7 +80,7 @@ namespace wolf {
                 grad_in[sample_idx * x_dim + x] = sum;  
             }
         };
-        return Tensor(grad_in, batch_size, x_dim);
+        return Tensor(std::move(grad_in), batch_size, x_dim);
 
     }
 

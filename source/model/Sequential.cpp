@@ -22,7 +22,7 @@ namespace wolf {
     TensorView Sequential::pred(TensorView x) {
 
         if (fbuf.empty() || fbuf.nrows() < x.rows || fbuf.ncols() < x.cols) {
-            fbuf = Tensor(std::vector<float>(x.rows * x.cols), x.rows, x.cols);
+            fbuf = Tensor(std::move(std::vector<float>(x.rows * x.cols)), x.rows, x.cols);
         } 
         std::copy_n(x.data, x.cols * x.rows, fbuf.raw().begin());
         fbuf.set_cols(x.cols);
@@ -31,6 +31,7 @@ namespace wolf {
         for (auto& l : layers) {
             fbuf = l->forward(fbuf);
         }
+        
         return TensorView{fbuf};
     }
 
@@ -133,7 +134,7 @@ namespace wolf {
                 }
             }
         }
-        bbuf = Tensor(out, a.rows, a.cols);
+        bbuf = Tensor(std::move(out), a.rows, a.cols);
         return TensorView(bbuf);
     }
 

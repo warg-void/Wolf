@@ -33,7 +33,7 @@ namespace wolf{
 
         // Ensure buffer has enough storage
         if (batch_buf.empty() || batch_buf.raw().size() < needed) {
-            batch_buf = Tensor(std::vector<float>(needed), batch_size, dim);
+            batch_buf = Tensor(std::move(std::vector<float>(needed)), batch_size, dim);
         }
 
         auto& buf = batch_buf.raw();
@@ -88,6 +88,13 @@ namespace wolf{
                 t_buf
             );
         }
+
+        // Tensor make_batch(std::span<float> t_data,
+        //                 size_t start_sample,
+        //                 size_t batch_size) {
+        //     indices[start_sample];
+        //     return Tensor(std::vector<float>{}, 1, batch_size);
+        // }
     };
 
     void save_tensor(const wolf::Tensor& t, const std::string& path) {
@@ -136,7 +143,7 @@ namespace wolf{
 
         in(rows, cols, raw).or_throw();
 
-        return wolf::Tensor(raw, rows, cols);
+        return wolf::Tensor(std::move(raw), rows, cols);
     }
 
     void export_tensor_csv(const wolf::Tensor& t, const std::string& path) {

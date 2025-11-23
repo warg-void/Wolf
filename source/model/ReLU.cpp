@@ -11,7 +11,7 @@
                 out[i] = x(i);
             }
         }
-        return Tensor(out, x.nrows(), x.ncols());
+        return Tensor(std::move(out), x.nrows(), x.ncols());
         }
 
         Tensor ReLULayer::backward(const Tensor& grad_out) {
@@ -22,6 +22,6 @@
             for (size_t i = 0; i < x.size(); i++) {
                 gx[i] = (x[i] > 0.0f) ? gy[i] : 0.0f;
             }
-            return Tensor(gx, last_input.nrows(), last_input.ncols());
+            return Tensor(std::move(gx), last_input.nrows(), last_input.ncols());
         }
     }
