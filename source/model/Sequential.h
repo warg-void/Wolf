@@ -18,7 +18,7 @@ public:
     void set_optimizer(OptimVariant cfg);
     Tensor pred(const Tensor &x);
     TensorView pred(TensorView x);
-    Tensor backward(const Tensor& grad_out);
+    Tensor backward(const Tensor& grad_y);
     TensorView backward();
     void step(float lr, size_t batch_size = 1);
     void step(size_t batch_size = 1);
@@ -31,7 +31,7 @@ private:
     std::vector<std::unique_ptr<Layer>> layers;
     Tensor fbuf; // Forward Buffer
     Tensor bbuf; // Backward buffer
-    Tensor grad_out; // dE_dy
+    Tensor grad_y; // dE_dy
     std::optional<OptimVariant> optim_cfg;
     size_t step_t = 0;
     LossConfig loss_cfg;

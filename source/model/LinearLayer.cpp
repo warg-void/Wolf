@@ -3,169 +3,142 @@
 #include <algorithm>
 #include <utils/timer.h>
 namespace wolf {
-    LinearLayer::LinearLayer(size_t in_dim, size_t out_dim) : Layer(LayerKind::Linear), in_dim(in_dim),
-            out_dim(out_dim) {
+    LinearLayer::LinearLayer(size_t x_dim, size_t y_dim) : Layer(LayerKind::Linear), x_dim(x_dim),
+            y_dim(y_dim) {
         auto& gen = rng().gen;
-        auto normal_gen = [&]() {return std::normal_distribution<float>{0.0f, std::sqrt(2.0f / in_dim)}(gen);};
-        std::vector<float> temp(out_dim * in_dim);
-        std::vector<float> temp_b(out_dim);
+        auto normal_gen = [&]() {return std::normal_distribution<float>{0.0f, std::sqrt(2.0f / x_dim)}(gen);};
+        std::vector<float> temp(y_dim * x_dim);
+        std::vector<float> temp_b(y_dim);
         std::ranges::generate(temp, normal_gen);
         std::ranges::generate(temp_b, normal_gen);
-        W = Tensor(temp, out_dim, in_dim);
-        dW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
-        vW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
-        b = Tensor(temp_b, 1, out_dim);
-        vB = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
-        db = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
-        rW = Tensor(std::vector<float>(out_dim * in_dim, 0.0f), out_dim, in_dim);
-        rB = Tensor(std::vector<float>(out_dim, 0.0f), 1, out_dim);
+        W = Tensor(temp, y_dim, x_dim);
+        dW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
+        vW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
+        b = Tensor(temp_b, 1, y_dim);
+        vb = Tensor(std::vector<float>(y_dim, 0.0f), 1, y_dim);
+        db = Tensor(std::vector<float>(y_dim, 0.0f), 1, y_dim);
+        rW = Tensor(std::vector<float>(y_dim * x_dim, 0.0f), y_dim, x_dim);
+        rb = Tensor(std::vector<float>(y_dim, 0.0f), 1, y_dim);
     }
     Tensor LinearLayer::forward(const Tensor& x) {
         last_input = x;
         size_t batch_size = x.nrows();
-        std::vector<float> out(batch_size * out_dim);
+        std::vector<float> out(batch_size * y_dim);
         #pragma omp parallel for 
-        for (std::ptrdiff_t j_ = 0; j_ < out_dim * batch_size; j_++) {
+        for (std::ptrdiff_t j_ = 0; j_ < y_dim * batch_size; j_++) {
             size_t j = static_cast<size_t>(j_);
-            const size_t k  = j % out_dim;      // output neuron index
-            const size_t bn = j / out_dim;      // batch index
+            const size_t k  = j % y_dim;      // output neuron index
+            const size_t bn = j / y_dim;      // batch index
             float sum = b(k);
-            for (size_t i = 0; i < in_dim; ++i) {
-                sum += x(i + in_dim * bn) * W(k, i);
+            for (size_t i = 0; i < x_dim; ++i) {
+                sum += x(i + x_dim * bn) * W(k, i);
             }
             out[j] = sum;
         }
-        return Tensor(out, batch_size, out_dim);
+        return Tensor(out, batch_size, y_dim);
     }
 
     Tensor LinearLayer::backward(const Tensor& grad_out) {
         size_t batch_size = grad_out.nrows();
-        const auto& x = last_input.raw();
-        const auto& gy = grad_out.raw();
-        auto& dW_raw = dW.raw();
-        auto& db_raw = db.raw();
-        const auto& W_raw = W.raw();
-        std::vector<float> gx(in_dim * batch_size, 0.0f);
+        std::vector<float> grad_in(x_dim * batch_size, 0.0f);
+
         // Unparallelized version of the below code:
-        // for (size_t i = 0; i < out_dim; i++) {
-        //     db_raw[i] = gy[i] / (float)batch_size;
-        //     for (size_t j = 0; j < in_dim; j++) {
-        //         dW_raw[i * in_dim + j] = gy[i] * x[j] / (float)batch_size;
-        //         gx[j] += W_raw[i * in_dim + j] * gy[i]; 
+        // for (size_t i = 0; i < y_dim; i++) {
+        //     db(i) = grad_in(i) / (float)batch_size;
+        //     for (size_t j = 0; j < x_dim; j++) {
+        //         dW[i * x_dim + j] = grad_in(i) * x[j] / (float)batch_size;
+        //         grad_in[j] += W[i * x_dim + j] * grad_out(i); 
         //     }
         // }
+
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < out_dim; i_++) {
-            size_t i = static_cast<size_t>(i_);
+        for (std::ptrdiff_t i_ = 0; i_ < y_dim; i_++) {
+            size_t y = static_cast<size_t>(i_);
             float db_acc = 0.0f;
-            const size_t row = i * in_dim;
+            const size_t y_flatten = y * x_dim;
 
-            for (size_t b = 0; b < batch_size; ++b) {
-                const float gy_bi = gy[b * out_dim + i];
-                db_acc += gy_bi;
-
-                const float* x_b = &x[b * in_dim];
-                for (size_t j = 0; j < in_dim; ++j) {
-                        dW_raw[row + j] += gy_bi * x_b[j];
+            for (size_t sample_idx = 0; sample_idx < batch_size; ++sample_idx) {
+                const float this_sample_grad_out = grad_out(sample_idx * y_dim + y);
+                db_acc += this_sample_grad_out;
+                const size_t sample_in_offset = sample_idx * x_dim;
+                for (size_t x = 0; x < x_dim; ++x) {
+                        dW(y_flatten + x) += this_sample_grad_out * last_input(x + sample_in_offset);
                 }
             }
 
-            db_raw[i] = db_acc;
+            db(y) = db_acc;
         }
         #pragma omp parallel for 
-        for (std::ptrdiff_t j_ = 0; j_ < in_dim; j_++) {
-            size_t j = static_cast<size_t>(j_);
-            for (size_t b = 0; b < batch_size; ++b) {
-                const float* gy_b = &gy[b * out_dim];        
+        for (std::ptrdiff_t j_ = 0; j_ < x_dim; j_++) {
+            size_t x = static_cast<size_t>(j_);
+            for (size_t sample_idx = 0; sample_idx < batch_size; ++sample_idx) {    
                 float sum = 0.0f;
-                for (size_t i = 0; i < out_dim; ++i) {
-                    sum += W_raw[i * in_dim + j] * gy_b[i];
+                const size_t sample_out_offset = sample_idx * y_dim;
+                for (size_t y = 0; y < y_dim; ++y) {
+                    sum += W(y * x_dim + x) * grad_out(y + sample_out_offset);
                 }
-                gx[b * in_dim + j] = sum;  
+                grad_in[sample_idx * x_dim + x] = sum;  
             }
         };
-
-
-        return Tensor(gx, batch_size, in_dim);
+        return Tensor(grad_in, batch_size, x_dim);
 
     }
 
     void LinearLayer::step_SGD(float lr, size_t batch_size) {
-        // SGD
-        auto& W_raw = W.raw();
-        auto& dW_raw = dW.raw();
-        auto& b_raw = b.raw();
-        auto& db_raw = db.raw();
         const float scale = lr / static_cast<float>(batch_size);
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            W_raw[i] -= scale * dW_raw[i] ;
-            dW_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < W.size(); i_++) {
+            size_t W_idx = static_cast<size_t>(i_);
+            W(W_idx) -= scale * dW(W_idx) ;
+            dW(W_idx) = 0.0f;
         }
 
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            b_raw[i] -= scale * db_raw[i];
-            db_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < b.size(); i_++) {
+            size_t b_idx = static_cast<size_t>(i_);
+            b(b_idx) -= scale * db(b_idx);
+            db(b_idx) = 0.0f;
         }
 
     }
 
     void LinearLayer::step_momentum(float lr, float mu, size_t batch_size) {
-        auto& W_raw = W.raw();
-        auto& dW_raw = dW.raw();
-        auto& b_raw = b.raw();
-        auto& db_raw = db.raw();
-        auto& vW_raw = vW.raw();
-        auto& vB_raw = vB.raw();
         const float scale = lr / static_cast<float>(batch_size);
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            vW_raw[i] = -scale * dW_raw[i] + mu * vW_raw[i];
-            W_raw[i] += vW_raw[i];
-            dW_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < W.size(); i_++) {
+            size_t W_idx = static_cast<size_t>(i_);
+            vW(W_idx) = -scale * dW(W_idx) + mu * vW(W_idx);
+            W(W_idx) += vW(W_idx);
+            dW(W_idx) = 0.0f;
         }
 
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            vB_raw[i] = -scale * db_raw[i] + mu * vB_raw[i];
-            b_raw[i] += vB_raw[i];
-            db_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < b.size(); i_++) {
+            size_t b_idx = static_cast<size_t>(i_);
+            vb(b_idx) = -scale * db(b_idx) + mu * vb(b_idx);
+            b(b_idx) += vb(b_idx);
+            db(b_idx) = 0.0f;
         }
     }
 
     void LinearLayer::step_RMSProp(float lr, float alpha, float eps, size_t batch_size) {
-        auto& W_raw = W.raw();
-        auto& dW_raw = dW.raw();
-        auto& rW_raw = rW.raw();
-        auto& b_raw = b.raw();
-        auto& db_raw = db.raw();
-        auto& rB_raw = rB.raw();
         const float scale = lr / static_cast<float>(batch_size);
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < W_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            rW_raw[i] = alpha * rW_raw[i] +  (1.0f - alpha) * dW_raw[i] * dW_raw[i];
-            W_raw[i] -= scale * dW_raw[i] / (std::sqrt(rW_raw[i]) + eps);
-            dW_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < W.size(); i_++) {
+            size_t W_idx = static_cast<size_t>(i_);
+            rW(W_idx) = alpha * rW(W_idx) +  (1.0f - alpha) * dW(W_idx) * dW(W_idx);
+            W(W_idx) -= scale * dW(W_idx) / (std::sqrt(rW(W_idx)) + eps);
+            dW(W_idx) = 0.0f;
         }
 
         #pragma omp parallel for 
-        for (std::ptrdiff_t i_ = 0; i_ < b_raw.size(); i_++) {
-            size_t i = static_cast<size_t>(i_);
-            rB_raw[i] = alpha * rB_raw[i] + (1.0f - alpha) * db_raw[i] * db_raw[i];
-            b_raw[i] -= scale * db_raw[i] / (std::sqrt(rB_raw[i]) + eps);
-            db_raw[i] = 0.0f;
+        for (std::ptrdiff_t i_ = 0; i_ < b.size(); i_++) {
+            size_t b_idx = static_cast<size_t>(i_);
+            rb(b_idx) = alpha * rb(b_idx) + (1.0f - alpha) * db(b_idx) * db(b_idx);
+            b(b_idx) -= scale * db(b_idx) / (std::sqrt(rb(b_idx)) + eps);
+            db(b_idx) = 0.0f;
         }
     }
 
-
-    // to delete
-    void LinearLayer::step(float lr, size_t batch_size) {
-        step_SGD(lr, batch_size);
-    }
+    // Step Adam in AdamStepper.cpp due to floating math restrictions
 }

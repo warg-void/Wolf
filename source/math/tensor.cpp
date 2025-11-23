@@ -10,7 +10,7 @@ namespace wolf {
         }
         cols = input[0].size();
         for (auto &i : input) {
-            data.insert(data.end(), i.begin(), i.end());
+            data_.insert(data_.end(), i.begin(), i.end());
         }
     }
 }

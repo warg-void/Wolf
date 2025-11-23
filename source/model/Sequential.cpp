@@ -35,8 +35,8 @@ namespace wolf {
     }
 
     
-    Tensor Sequential::backward(const Tensor& grad_out) {
-        Tensor g = grad_out;
+    Tensor Sequential::backward(const Tensor& grad_y) {
+        Tensor g = grad_y;
         for (std::size_t i = layers.size(); i-- > 0; ) {
             g = layers[i]->backward(g); 
         }
@@ -48,12 +48,6 @@ namespace wolf {
             bbuf = layers[i]->backward(bbuf); 
         }
         return TensorView{bbuf};
-    }
-    
-    void Sequential::step(float lr, size_t batch_size) { // learn rate
-        for (size_t i = layers.size() - 1; i < layers.size(); --i) {
-            layers[i]->step(lr, batch_size);
-        }
     }
 
     void Sequential::step(size_t batch_size) {
