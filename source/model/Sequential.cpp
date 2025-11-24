@@ -24,7 +24,7 @@ namespace wolf {
         if (fbuf.empty() || fbuf.nrows() < x.rows || fbuf.ncols() < x.cols) {
             fbuf = Tensor(std::move(std::vector<float>(x.rows * x.cols)), x.rows, x.cols);
         } 
-        std::copy_n(x.data, x.cols * x.rows, fbuf.raw().begin());
+        std::copy_n(x.data, x.cols * x.rows, fbuf.data().begin());
         fbuf.set_cols(x.cols);
         fbuf.set_rows(x.rows);
         
@@ -34,7 +34,7 @@ namespace wolf {
         
         return TensorView{fbuf};
     }
-
+    
     
     Tensor Sequential::backward(const Tensor& grad_y) {
         Tensor g = grad_y;

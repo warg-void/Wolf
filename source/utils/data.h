@@ -32,11 +32,11 @@ namespace wolf{
         const std::size_t needed = batch_size * dim;
 
         // Ensure buffer has enough storage
-        if (batch_buf.empty() || batch_buf.raw().size() < needed) {
+        if (batch_buf.empty() || batch_buf.data().size() < needed) {
             batch_buf = Tensor(std::move(std::vector<float>(needed)), batch_size, dim);
         }
 
-        auto& buf = batch_buf.raw();
+        auto& buf = batch_buf.data();
 
         for (std::size_t i = 0; i < batch_size; ++i) {
             std::size_t sample_idx = indices[start_sample + i];
@@ -102,7 +102,7 @@ namespace wolf{
 
         const std::size_t rows = t.nrows();
         const std::size_t cols = t.ncols();
-        const std::vector<float> raw      = t.raw();
+        const std::vector<float> raw      = t.data();
 
         // Serialize (rows, cols, data) in that order
         out(rows, cols, raw).or_throw();
@@ -149,7 +149,7 @@ namespace wolf{
     void export_tensor_csv(const wolf::Tensor& t, const std::string& path) {
         const std::size_t rows = t.nrows();
         const std::size_t cols = t.ncols();
-        const std::vector<float>& raw = t.raw();
+        const std::vector<float>& raw = t.data();
 
         std::ofstream file(path);
         if (!file) {

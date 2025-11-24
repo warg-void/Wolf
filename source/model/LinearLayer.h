@@ -23,8 +23,8 @@ public:
     Tensor weights() const {return W;}
     Tensor bias() const {return b;}
     void save_body(zpp::bits::out<std::vector<std::byte>>& out) const override {
-        const auto& Wv = W.raw();
-        const auto& bv = b.raw();
+        const auto& Wv = W.data();
+        const auto& bv = b.data();
         out(x_dim, y_dim, Wv, bv).or_throw();
     }
     static std::unique_ptr<Layer> load_from(zpp::bits::in<std::vector<std::byte>>& in) {
@@ -33,8 +33,8 @@ public:
         in(x_dim, y_dim, Wv, bv).or_throw();
 
         auto layer = std::make_unique<LinearLayer>(x_dim, y_dim);
-        layer->W.raw() = std::move(Wv);
-        layer->b.raw() = std::move(bv);
+        layer->W.data() = std::move(Wv);
+        layer->b.data() = std::move(bv);
         return layer;
     }
 private:

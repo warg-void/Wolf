@@ -20,6 +20,8 @@ public:
     TensorView pred(TensorView x);
     Tensor backward(const Tensor& grad_y);
     TensorView backward();
+    void set_GPU(bool){};
+    void init();
     void step(float lr, size_t batch_size = 1);
     void step(size_t batch_size = 1);
     void set_loss(LossType a) {loss_cfg.l = a;}

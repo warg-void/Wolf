@@ -22,9 +22,6 @@ public:
     void set_rows(size_t r) {rows = r;}
     void set_cols(size_t c) {cols = c;}
 
-    std::vector<float>& raw() {return data_;}
-    const std::vector<float>& raw() const { return data_; }
-
     template <class Self>
     auto&& data(this Self&& self) {
         return std::forward<Self>(self).data_;
@@ -61,7 +58,7 @@ struct TensorView {
     size_t rows, cols;
 
     TensorView(float* data, size_t rows, size_t cols) : data(data), rows(rows), cols(cols) {}
-    TensorView(Tensor& input) : data(input.raw().data()), rows(input.nrows()), cols(input.ncols()) {}
+    TensorView(Tensor& input) : data(input.data().data()), rows(input.nrows()), cols(input.ncols()) {}
 
     float& operator()(std::size_t i)       { return data[i]; }
     float  operator()(std::size_t i) const { return data[i]; }

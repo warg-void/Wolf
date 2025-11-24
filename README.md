@@ -1,7 +1,7 @@
 # Wolf — A Fast, Native C++ Neural Net Library
 
 Wolf is a barebones C++23 neural network implementation.
-Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CPU in **<1 second** without any external ML frameworks. It is also optimized for CPU and has been tested to run more than **10x** faster than pytorch's CPU implementation for nn.Sequential.
+Trains a fully connected network at blazing fast speeds on CPU.
 
 # [Documentation](https://warg-void.github.io/wolf-docs/)
 
@@ -14,8 +14,7 @@ Trains a fully connected network to **~95% accuracy on MNIST** on 1 epoch and CP
 - [Documentation](#documentation)
   - [Features](#features)
     - [Build from Source (CMake)](#build-from-source-cmake)
-  - [External Libraries Used](#external-libraries-used)
-    - [To implement](#to-implement)
+  - [External Libraries Used (No need to install)](#external-libraries-used-no-need-to-install)
     - [References](#references)
 ---
 ## Features 
@@ -49,20 +48,13 @@ cmake --build build
 ./build/examples/irisClassifier
 ./build/examples/mnistClassifier
 ```
-## External Libraries Used
+## External Libraries Used (No need to install)
 - OpenMP (for parallelization)
 - [zpp_bits](https://github.com/eyalz800/zpp_bits) (for serializing and deserializing)
 
 
 <img src="public/img/SWNO1.jpg" alt="Silver Wolf" width="400"/>
 
-### To implement
-- [ ] More Types of Layers and Loss
-- [ ] AdamW optimizer
-- [ ] Write Docs
-- [ ] ROCm and rocBLAS 
-- [ ] cuDA and cuBLAS
-- [ ] CNNs
 
 ### References
 1) Deep Learning: Foundations and Concepts: by Christopher M. Bishop and Hugh Bishop, Springer Cham (2023).

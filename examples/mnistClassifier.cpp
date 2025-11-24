@@ -150,5 +150,10 @@ int main(int argc, char** argv) {
     std::println("Test accuracy: {}/{} ({:.2f}%)",
                  correct, n_test_samples, acc);
 
+    // Save the model
+    model.save("model.bin");
+    
+    // Load the model
+    // Sequential loaded_model = Sequential::load("model.bin");
     return 0;
 }
