@@ -3,3 +3,6 @@ build
 examples/old
 test
 clang
+model.bin
+gmon.out
+analysis.txt

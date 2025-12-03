@@ -35,7 +35,7 @@ namespace wolf {
             }
             out[j] = sum;
         }
-        return Tensor(std::move(out), batch_size, y_dim);
+        return Tensor(out, batch_size, y_dim);
     }
 
     Tensor LinearLayer::backward(const Tensor& grad_out) {
@@ -80,7 +80,7 @@ namespace wolf {
                 grad_in[sample_idx * x_dim + x] = sum;  
             }
         };
-        return Tensor(std::move(grad_in), batch_size, x_dim);
+        return Tensor(grad_in, batch_size, x_dim);
 
     }
 
